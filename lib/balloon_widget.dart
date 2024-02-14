@@ -99,16 +99,79 @@ class _BalloonPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final path = drawPath(size);
+    final path = drawPath(
+        size, calibrateBorderRadius(borderRadius: borderRadius, size: size));
 
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
-    canvas.drawShadow(path, shadowColor, elevation, false);
+    if (elevation > 0) canvas.drawShadow(path, shadowColor, elevation, true);
     canvas.drawPath(path, paint);
   }
 
-  Path drawPath(Size size) {
+  static BorderRadius calibrateBorderRadius(
+      {required BorderRadius borderRadius, required Size size}) {
+    final keySize = size.shortestSide;
+    if (keySize >= borderRadius.topLeft.x + borderRadius.topRight.x &&
+        keySize >= borderRadius.bottomLeft.x + borderRadius.bottomRight.x &&
+        keySize >= borderRadius.topLeft.y + borderRadius.bottomLeft.y &&
+        keySize >= borderRadius.topRight.y + borderRadius.bottomRight.y) {
+      return borderRadius;
+    }
+
+    if (keySize == size.height) {
+      // height가 가장 짧은 변인 경우. y를 기준으로 분배.
+      final leftOriginalHeight =
+          borderRadius.topLeft.y + borderRadius.bottomLeft.y;
+      final correctTopLeft =
+              keySize * (borderRadius.topLeft.y / leftOriginalHeight),
+          correctBottomLeft =
+              keySize * (borderRadius.bottomLeft.y / leftOriginalHeight);
+
+      final rightOriginalHeight =
+          borderRadius.topRight.y + borderRadius.bottomRight.y;
+      final correctTopRight =
+          keySize * (borderRadius.topRight.y / rightOriginalHeight),
+          correctBottomRight =
+              keySize * (borderRadius.bottomRight.y / rightOriginalHeight);
+
+      return BorderRadius.only(
+        topLeft: Radius.circular(correctTopLeft),
+        topRight: Radius.circular(correctTopRight),
+        bottomLeft: Radius.circular(correctBottomLeft),
+        bottomRight: Radius.circular(correctBottomRight),
+      );
+    } else {
+      // width가 가장 짧은 변인 경우. x를 기준으로 분배.
+      final topOriginalHeight =
+          borderRadius.topLeft.x + borderRadius.topRight.x;
+      final correctTopLeft =
+          keySize * (borderRadius.topLeft.x / topOriginalHeight),
+          correctTopRight =
+              keySize * (borderRadius.topRight.x / topOriginalHeight);
+
+      final bottomOriginalHeight =
+          borderRadius.bottomLeft.x + borderRadius.bottomRight.x;
+      final correctBottomLeft =
+          keySize * (borderRadius.bottomLeft.x / bottomOriginalHeight),
+          correctBottomRight =
+              keySize * (borderRadius.bottomRight.x / bottomOriginalHeight);
+
+      return BorderRadius.only(
+        topLeft: Radius.circular(correctTopLeft),
+        topRight: Radius.circular(correctTopRight),
+        bottomLeft: Radius.circular(correctBottomLeft),
+        bottomRight: Radius.circular(correctBottomRight),
+      );
+    }
+  }
+
+  Path drawPath(Size size, BorderRadius borderRadius) {
+    final topLeftRadius = borderRadius.topLeft,
+        topRightRadius = borderRadius.topRight,
+        bottomLeftRadius = borderRadius.bottomLeft,
+        bottomRightRadius = borderRadius.bottomRight;
+
     final List<(Offset, Offset, Radius)> lines = [
       (
         Offset(topLeftRadius.x, 0),
@@ -166,14 +229,6 @@ class _BalloonPainter extends CustomPainter {
         oldDelegate.nipRadius != nipRadius ||
         oldDelegate.borderRadius != borderRadius;
   }
-
-  Radius get topLeftRadius => borderRadius.topLeft;
-
-  Radius get topRightRadius => borderRadius.topRight;
-
-  Radius get bottomLeftRadius => borderRadius.bottomLeft;
-
-  Radius get bottomRightRadius => borderRadius.bottomRight;
 }
 
 extension _BalloonPathExtension on Path {
