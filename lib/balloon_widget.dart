@@ -131,7 +131,7 @@ class _BalloonPainter extends CustomPainter {
       final rightOriginalHeight =
           borderRadius.topRight.y + borderRadius.bottomRight.y;
       final correctTopRight =
-          keySize * (borderRadius.topRight.y / rightOriginalHeight),
+              keySize * (borderRadius.topRight.y / rightOriginalHeight),
           correctBottomRight =
               keySize * (borderRadius.bottomRight.y / rightOriginalHeight);
 
@@ -146,14 +146,14 @@ class _BalloonPainter extends CustomPainter {
       final topOriginalHeight =
           borderRadius.topLeft.x + borderRadius.topRight.x;
       final correctTopLeft =
-          keySize * (borderRadius.topLeft.x / topOriginalHeight),
+              keySize * (borderRadius.topLeft.x / topOriginalHeight),
           correctTopRight =
               keySize * (borderRadius.topRight.x / topOriginalHeight);
 
       final bottomOriginalHeight =
           borderRadius.bottomLeft.x + borderRadius.bottomRight.x;
       final correctBottomLeft =
-          keySize * (borderRadius.bottomLeft.x / bottomOriginalHeight),
+              keySize * (borderRadius.bottomLeft.x / bottomOriginalHeight),
           correctBottomRight =
               keySize * (borderRadius.bottomRight.x / bottomOriginalHeight);
 
