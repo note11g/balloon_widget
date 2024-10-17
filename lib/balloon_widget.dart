@@ -5,16 +5,24 @@ import 'package:flutter/material.dart';
 
 enum BalloonNipPosition {
   topLeft,
+  topCenter,
   topRight,
   bottomLeft,
+  bottomCenter,
   bottomRight;
 
   bool get isTop =>
-      this == BalloonNipPosition.topLeft || this == BalloonNipPosition.topRight;
+      this == BalloonNipPosition.topLeft ||
+      this == BalloonNipPosition.topRight ||
+      this == BalloonNipPosition.topCenter;
 
   bool get isStart =>
       this == BalloonNipPosition.topLeft ||
       this == BalloonNipPosition.bottomRight;
+
+  bool get isCenter =>
+      this == BalloonNipPosition.topCenter ||
+      this == BalloonNipPosition.bottomCenter;
 }
 
 class Balloon extends StatelessWidget {
@@ -25,6 +33,12 @@ class Balloon extends StatelessWidget {
   final Color shadowColor;
   final BalloonNipPosition nipPosition;
   final double nipSize;
+
+  /// The margin between the nip and the edge of the balloon. (start point is rounded end point)
+  ///
+  /// if nipPosition is `topCenter` or `bottomCenter`, this value is ignored.
+  ///
+  /// The default value is 4.0.
   final double nipMargin;
   final double nipRadius;
   final bool isHeightIncludingNip;
@@ -249,7 +263,11 @@ extension _BalloonPathExtension on Path {
     final radiusWidth = (nipRadius * math.sqrt(2) / 2);
 
     final double nipStartX, nipEndX;
-    if (nipPosition.isStart) {
+    if (nipPosition.isCenter) {
+      final centerX = (start.dx + end.dx) / 2;
+      nipStartX = centerX - (nipWidthCenter * xDir);
+      nipEndX = centerX + (nipWidthCenter * xDir);
+    } else if (nipPosition.isStart) {
       nipStartX = start.dx + (nipMargin * xDir);
       nipEndX = nipStartX + (nipSize * xDir);
     } else {

@@ -7,11 +7,15 @@ void main() {
     await loadAppFonts();
 
     const textWidget = Text("Hello Flutter!");
-    final builder = GoldenBuilder.grid(columns: 2, widthToHeightRatio: 1)
+    final builder = GoldenBuilder.grid(columns: 3, widthToHeightRatio: 1)
       ..addScenario(
           'nipPosition: topLeft',
           const Balloon(
               nipPosition: BalloonNipPosition.topLeft, child: textWidget))
+      ..addScenario(
+          "nipPosition: topCenter",
+          const Balloon(
+              nipPosition: BalloonNipPosition.topCenter, child: textWidget))
       ..addScenario(
           'nipPosition: topRight',
           const Balloon(
@@ -20,6 +24,10 @@ void main() {
           'nipPosition: bottomLeft',
           const Balloon(
               nipPosition: BalloonNipPosition.bottomLeft, child: textWidget))
+      ..addScenario(
+          "nipPosition: bottomCenter",
+          const Balloon(
+              nipPosition: BalloonNipPosition.bottomCenter, child: textWidget))
       ..addScenario(
           'nipPosition: bottomRight (default)',
           const Balloon(
