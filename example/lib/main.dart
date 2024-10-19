@@ -33,6 +33,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final showTooltip = ValueNotifier<bool>(true);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -47,6 +49,35 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(8.0),
                 child: Balloon(nipPosition: e, child: Text(e.name)),
               ))
-        ])));
+        ])),
+        floatingActionButton: ValueListenableBuilder(
+            valueListenable: showTooltip,
+            builder: (context, value, child) {
+              return PositionedBalloon.decorateBuilder(
+                balloon: Balloon(
+                  nipPosition: BalloonNipPosition.bottomRight,
+                  color: Theme.of(context).colorScheme.secondary,
+                  child: Text(
+                      'this balloon is\ncreated by\nfloating action button',
+                      style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSecondary),
+                      textAlign: TextAlign.right),
+                ),
+                balloonDecorateBuilder: (context, balloon) {
+                  return AnimatedOpacity(
+                      opacity: value ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 100),
+                      curve: Curves.easeInOut,
+                      child: balloon);
+                },
+                child: FloatingActionButton(
+                  onPressed: () {
+                    showTooltip.value = !showTooltip.value;
+                  },
+                  tooltip: 'open help',
+                  child: Icon(value ? Icons.close : Icons.live_help_outlined),
+                ),
+              );
+            }));
   }
 }

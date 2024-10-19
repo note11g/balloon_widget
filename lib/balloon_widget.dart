@@ -5,29 +5,106 @@ import 'package:flutter/material.dart';
 
 enum BalloonNipPosition {
   topLeft,
+  topCenter,
   topRight,
   bottomLeft,
+  bottomCenter,
   bottomRight;
 
   bool get isTop =>
-      this == BalloonNipPosition.topLeft || this == BalloonNipPosition.topRight;
+      this == BalloonNipPosition.topLeft ||
+      this == BalloonNipPosition.topRight ||
+      this == BalloonNipPosition.topCenter;
 
   bool get isStart =>
       this == BalloonNipPosition.topLeft ||
       this == BalloonNipPosition.bottomRight;
+
+  bool get isCenter =>
+      this == BalloonNipPosition.topCenter ||
+      this == BalloonNipPosition.bottomCenter;
+
+  bool get isLeft =>
+      this == BalloonNipPosition.topLeft ||
+      this == BalloonNipPosition.bottomLeft;
+}
+
+/// `PositionedBalloon` is a decorator widget that provide the `Balloon` widget similar to Flutter’s built-in [`Tooltip`](https://api.flutter.dev/flutter/material/Tooltip-class.html),
+/// allowing it to describe child widgets.
+///
+/// By integrating directly into the widget tree, it avoids using the [Overlay](https://api.flutter.dev/flutter/widgets/Overlay-class.html) API,
+/// so developers do not need to manage its lifecycle.
+///
+class PositionedBalloon extends StatelessWidget {
+  final bool show;
+  final double yOffset;
+  final Balloon balloon;
+  final Widget Function(BuildContext context, Balloon balloon)?
+      balloonDecorateBuilder;
+  final Widget child;
+
+  const PositionedBalloon({
+    super.key,
+    this.show = true,
+    this.yOffset = 4,
+    required this.balloon,
+    required this.child,
+  }) : balloonDecorateBuilder = null;
+
+  /// Decorate the balloon with a custom widget wrapping.
+  ///
+  /// If you want to decorate the balloon with a custom widget, use this constructor.
+  const PositionedBalloon.decorateBuilder({
+    super.key,
+    this.yOffset = 4,
+    required this.balloonDecorateBuilder,
+    required this.balloon,
+    required this.child,
+  }) : show = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final isTop = balloon.nipPosition.isTop;
+    return Stack(clipBehavior: Clip.none, children: [
+      child,
+      if (show || balloonDecorateBuilder != null)
+        Positioned(
+          top: isTop ? null : 0 - yOffset,
+          bottom: isTop ? -1 - yOffset : null,
+          left: 1,
+          right: 0,
+          child: Center(
+            child: UnconstrainedBox(
+                child: balloonDecorateBuilder != null
+                    ? Builder(builder: (context) {
+                        return balloonDecorateBuilder!
+                            .call(context, balloon.toNoSize());
+                      })
+                    : balloon.toNoSize()),
+          ),
+        ),
+    ]);
+  }
 }
 
 class Balloon extends StatelessWidget {
   final Color color;
   final BorderRadius borderRadius;
   final EdgeInsets padding;
-  final double elevation;
+  final double elevation; // todo: change to BoxShadow
   final Color shadowColor;
   final BalloonNipPosition nipPosition;
   final double nipSize;
+
+  /// The margin between the nip and the edge of the balloon. (start point is rounded end point)
+  ///
+  /// if nipPosition is `topCenter` or `bottomCenter`, this value is ignored.
+  ///
+  /// The default value is 4.0.
   final double nipMargin;
   final double nipRadius;
   final bool isHeightIncludingNip;
+  final bool oneByOneSize;
   final Widget child;
 
   const Balloon({
@@ -43,36 +120,153 @@ class Balloon extends StatelessWidget {
     this.nipRadius = 2,
     this.isHeightIncludingNip = true,
     required this.child,
-  });
+  }) : oneByOneSize = false;
+
+  /// Draw a balloon at 1px x 1px.
+  ///
+  /// that widget take only 1px x 1px size.
+  ///
+  /// 1px x 1px is located at the nip target position.
+  ///
+  /// but, drawing normal size.
+  const Balloon.noSize({
+    super.key,
+    this.color = Colors.white,
+    this.borderRadius = const BorderRadius.all(Radius.circular(8)),
+    this.padding = const EdgeInsets.all(8),
+    this.elevation = 4,
+    this.shadowColor = Colors.black26,
+    this.nipPosition = BalloonNipPosition.bottomRight,
+    this.nipSize = 12,
+    this.nipMargin = 4,
+    this.nipRadius = 2,
+    required this.child,
+  })  : isHeightIncludingNip = true,
+        oneByOneSize = true;
+
+  Balloon toNoSize() {
+    return Balloon.noSize(
+      color: color,
+      borderRadius: borderRadius,
+      padding: padding,
+      elevation: elevation,
+      shadowColor: shadowColor,
+      nipPosition: nipPosition,
+      nipSize: nipSize,
+      nipMargin: nipMargin,
+      nipRadius: nipRadius,
+      child: child,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final nipHeight = _calcNipHeight(nipSize);
-    return Padding(
-        padding: isHeightIncludingNip
-            ? EdgeInsets.only(
-                top: nipPosition.isTop ? nipHeight : 0,
-                bottom: !nipPosition.isTop ? nipHeight : 0,
-              )
-            : EdgeInsets.zero,
-        child: CustomPaint(
-            painter: _BalloonPainter(
-              color: color,
-              borderRadius: borderRadius,
-              elevation: elevation,
-              shadowColor: shadowColor,
-              nipPosition: nipPosition,
-              nipMargin: nipMargin,
-              nipSize: nipSize,
-              nipRadius: nipRadius,
-            ),
-            child: ClipRRect(
-              borderRadius: borderRadius,
-              child: Padding(
-                padding: padding,
-                child: child,
-              ),
-            )));
+    final nipHeight = _getRealNipHeight(nipSize, nipRadius);
+    final balloonWidget = Padding(
+      padding: isHeightIncludingNip
+          ? EdgeInsets.only(
+              top: nipPosition.isTop ? nipHeight : 0,
+              bottom: !nipPosition.isTop ? nipHeight : 0,
+            )
+          : EdgeInsets.zero,
+      child: CustomPaint(
+        painter: _BalloonPainter(
+          color: color,
+          borderRadius: borderRadius,
+          elevation: elevation,
+          shadowColor: shadowColor,
+          nipPosition: nipPosition,
+          nipMargin: nipMargin,
+          nipSize: nipSize,
+          nipRadius: nipRadius,
+        ),
+        child: ClipRRect(
+          borderRadius: borderRadius,
+          child: Padding(
+            padding: padding,
+            child: child,
+          ),
+        ),
+      ),
+    );
+
+    if (oneByOneSize) {
+      return CustomSingleChildLayout(
+        delegate: _BalloonNoSizeLayoutDelegate(
+          nipPosition: nipPosition,
+          nipSize: nipSize,
+          nipMargin: nipMargin,
+          borderRadius: borderRadius,
+          padding: padding,
+        ),
+        child: balloonWidget,
+      );
+    } else {
+      return balloonWidget;
+    }
+  }
+}
+
+double _calcNipHeight(double nipSize) {
+  return nipSize / 2 * math.sqrt(2); // 45 degree triangle
+}
+
+double _getRealNipHeight(double nipSize, double nipRadius) {
+  final baseHeight = _calcNipHeight(nipSize);
+  // sin(45) = sqrt(2) / 2
+  final radiusAdjustment = nipRadius * math.sqrt(2) / 2;
+  return baseHeight - radiusAdjustment;
+}
+
+class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
+  final BalloonNipPosition nipPosition;
+  final double nipSize;
+  final double nipMargin;
+  final BorderRadius borderRadius;
+  final EdgeInsets padding;
+
+  _BalloonNoSizeLayoutDelegate({
+    required this.nipPosition,
+    required this.nipSize,
+    required this.nipMargin,
+    required this.borderRadius,
+    required this.padding,
+  });
+
+  @override
+  Size getSize(BoxConstraints constraints) {
+    return const Size(1, 1);
+  }
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final Offset nipOffset = _calculateNipOffset(childSize);
+    return nipOffset * -1;
+  }
+
+  Offset _calculateNipOffset(Size childSize) {
+    final Size(width: cw, height: ch) = childSize;
+    final baseDx = (nipMargin + (nipSize / 2));
+
+    final double dx = switch (nipPosition) {
+      BalloonNipPosition.topCenter || BalloonNipPosition.bottomCenter => cw / 2,
+      BalloonNipPosition.topLeft => borderRadius.topLeft.x + baseDx,
+      BalloonNipPosition.bottomLeft => borderRadius.bottomLeft.x + baseDx,
+      BalloonNipPosition.topRight => cw - (borderRadius.topRight.x + baseDx),
+      BalloonNipPosition.bottomRight =>
+        cw - (borderRadius.bottomRight.x + baseDx),
+    };
+    final double dy = nipPosition.isTop ? 0.0 : ch;
+    return Offset(dx, dy);
+  }
+
+  @override
+  bool shouldRelayout(_BalloonNoSizeLayoutDelegate oldDelegate) {
+    return oldDelegate.nipPosition != nipPosition ||
+        oldDelegate.nipSize != nipSize ||
+        oldDelegate.nipMargin != nipMargin ||
+        oldDelegate.borderRadius != borderRadius ||
+        oldDelegate.padding != padding;
   }
 }
 
@@ -200,14 +394,14 @@ class _BalloonPainter extends CustomPainter {
     for (int i = 0; i < lines.length; i++) {
       final (start, end, rad) = lines[i];
       if (i == nipLineIdx) {
-        path.drawNip(start, end,
+        path._drawNip(start, end,
             nipSize: nipSize,
             nipMargin: nipMargin,
             nipPosition: nipPosition,
             nipRadius: nipRadius);
       } else {
         if (i == 0) path.moveTo(start.dx, start.dy);
-        path.lineToPoint(end);
+        path._lineToPoint(end);
       }
       // next round(arc)
       final nextIdx = i != lines.length - 1 ? i + 1 : 0;
@@ -232,9 +426,9 @@ class _BalloonPainter extends CustomPainter {
 }
 
 extension _BalloonPathExtension on Path {
-  void lineToPoint(Offset point) => lineTo(point.dx, point.dy);
+  void _lineToPoint(Offset point) => lineTo(point.dx, point.dy);
 
-  void drawNip(
+  void _drawNip(
     Offset start,
     Offset end, {
     required double nipSize,
@@ -249,7 +443,11 @@ extension _BalloonPathExtension on Path {
     final radiusWidth = (nipRadius * math.sqrt(2) / 2);
 
     final double nipStartX, nipEndX;
-    if (nipPosition.isStart) {
+    if (nipPosition.isCenter) {
+      final centerX = (start.dx + end.dx) / 2;
+      nipStartX = centerX - (nipWidthCenter * xDir);
+      nipEndX = centerX + (nipWidthCenter * xDir);
+    } else if (nipPosition.isStart) {
       nipStartX = start.dx + (nipMargin * xDir);
       nipEndX = nipStartX + (nipSize * xDir);
     } else {
@@ -270,13 +468,11 @@ extension _BalloonPathExtension on Path {
       nipRoundStartPoint.dy,
     );
 
-    lineToPoint(start);
+    _lineToPoint(start);
     lineTo(nipStartX, start.dy);
-    lineToPoint(nipRoundStartPoint);
+    _lineToPoint(nipRoundStartPoint);
     arcToPoint(nipRoundEndPoint, radius: Radius.circular(nipRadius));
     lineTo(nipEndX, end.dy);
-    lineToPoint(end);
+    _lineToPoint(end);
   }
 }
-
-double _calcNipHeight(double nipSize) => nipSize / 2 * math.sqrt(2);
