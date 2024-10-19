@@ -161,7 +161,7 @@ class Balloon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nipHeight = _calcNipHeight(nipSize);
+    final nipHeight = _getRealNipHeight(nipSize, nipRadius);
     final balloonWidget = Padding(
       padding: isHeightIncludingNip
           ? EdgeInsets.only(
@@ -195,6 +195,7 @@ class Balloon extends StatelessWidget {
         delegate: _BalloonNoSizeLayoutDelegate(
           nipPosition: nipPosition,
           nipSize: nipSize,
+          nipRadius: nipRadius,
           nipMargin: nipMargin,
           borderRadius: borderRadius,
           padding: padding,
@@ -208,13 +209,20 @@ class Balloon extends StatelessWidget {
 }
 
 double _calcNipHeight(double nipSize) {
-  return nipSize / 2 * math.sqrt(2);
+  return nipSize / 2 * math.sqrt(2); // 45 degree triangle
+}
+
+double _getRealNipHeight(double nipSize, double nipRadius) {
+  final baseHeight = _calcNipHeight(nipSize);
+  final radiusAdjustment = nipRadius * math.sqrt(2) / 2; // sin(45) = sqrt(2) / 2
+  return baseHeight - radiusAdjustment;
 }
 
 class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
   final BalloonNipPosition nipPosition;
   final double nipSize;
   final double nipMargin;
+  final double nipRadius;
   final BorderRadius borderRadius;
   final EdgeInsets padding;
 
@@ -222,6 +230,7 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
     required this.nipPosition,
     required this.nipSize,
     required this.nipMargin,
+    required this.nipRadius,
     required this.borderRadius,
     required this.padding,
   });
@@ -234,7 +243,7 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
   @override
   Offset getPositionForChild(Size size, Size childSize) {
     final nipOffset = _calculateNipOffset(childSize);
-    final nipHeight = _calcNipHeight(nipSize);
+    final nipHeight = _getRealNipHeight(nipSize, nipRadius);
 
     final double dx = -nipOffset.dx;
     final double dy =
@@ -244,7 +253,7 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
   }
 
   Offset _calculateNipOffset(Size childSize) {
-    final nipHeight = _calcNipHeight(nipSize);
+    final nipHeight = _getRealNipHeight(nipSize, nipRadius);
 
     final double dx;
     if (nipPosition.isCenter) {
