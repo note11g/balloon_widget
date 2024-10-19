@@ -211,4 +211,106 @@ void main() {
     await tester.pumpWidgetBuilder(builder.build());
     await screenMatchesGolden(tester, 'borderRadius_balloon_color_grid');
   });
+
+  testGoldens('balloon with PositionedBalloon', (tester) async {
+    await loadAppFonts();
+
+    const textWidget = Text("Press the button!");
+    final heartButton = Container(
+        width: 64,
+        height: 64,
+        decoration: const BoxDecoration(
+            color: Colors.redAccent,
+            borderRadius: BorderRadius.all(Radius.circular(12))));
+
+    final builder = GoldenBuilder.grid(
+        columns: 3,
+        widthToHeightRatio: 0.9,
+        wrap: (child) => Container(
+              alignment: Alignment.bottomCenter,
+              height: (800 / 3) * 0.5,
+              child: child,
+            ))
+      ..addScenario(
+          'PositionedBalloon: Balloon(bottomLeft)',
+          PositionedBalloon(
+            balloon: const Balloon(
+                nipPosition: BalloonNipPosition.bottomLeft, child: textWidget),
+            child: heartButton,
+          ))
+      ..addScenario(
+          'PositionedBalloon: Balloon(bottomCenter)',
+          PositionedBalloon(
+            balloon: const Balloon(
+                nipPosition: BalloonNipPosition.bottomCenter,
+                child: textWidget),
+            child: heartButton,
+          ))
+      ..addScenario(
+          'PositionedBalloon: Balloon(bottomRight, default)',
+          PositionedBalloon(
+            balloon: const Balloon(child: textWidget),
+            child: heartButton,
+          ))
+      ..addScenario(
+          'PositionedBalloon: Balloon(topLeft)\n/yOffset: 16',
+          Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            PositionedBalloon(
+              yOffset: 16,
+              balloon: const Balloon(
+                  nipPosition: BalloonNipPosition.topLeft, child: textWidget),
+              child: heartButton,
+            ),
+            _heightIndicatorWidget(16),
+          ]))
+      ..addScenario(
+          'PositionedBalloon: Balloon(topCenter)\n/yOffset: 0(default)',
+          PositionedBalloon(
+            yOffset: 0,
+            balloon: const Balloon(
+                nipPosition: BalloonNipPosition.topCenter, child: textWidget),
+            child: heartButton,
+          ))
+      ..addScenario(
+          'PositionedBalloon: Balloon(topRight)\n/yOffset: 4(default)',
+          PositionedBalloon(
+            balloon: const Balloon(
+                nipPosition: BalloonNipPosition.topRight, child: textWidget),
+            child: heartButton,
+          ));
+
+    await tester.pumpWidgetBuilder(builder.build());
+    await screenMatchesGolden(tester, 'positioned_balloon');
+  });
+}
+
+Widget _heightIndicatorWidget(double height) {
+  return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 1,
+          color: Colors.blueAccent.withOpacity(0.8),
+        ),
+        Container(
+          width: 2,
+          height: height - 2,
+          color: Colors.blueAccent.withOpacity(0.8),
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          child: Text("  h=$height",
+              maxLines: 1,
+              softWrap: false,
+              overflow: TextOverflow.visible,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 10)),
+        ),
+        Container(
+          width: 8,
+          height: 1,
+          color: Colors.blueAccent.withOpacity(0.8),
+        ),
+      ]);
 }
