@@ -247,7 +247,7 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
 
     final double dx = -nipOffset.dx;
     final double dy =
-        -nipOffset.dy + (nipPosition.isTop ? -nipHeight : -nipHeight);
+        -nipOffset.dy + (nipPosition.isTop ? nipHeight : -nipHeight);
 
     return Offset(dx, dy);
   }
