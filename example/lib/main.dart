@@ -47,6 +47,23 @@ class _MyHomePageState extends State<MyHomePage> {
                 padding: const EdgeInsets.all(8.0),
                 child: Balloon(nipPosition: e, child: Text(e.name)),
               ))
-        ])));
+        ])),
+        floatingActionButton: Builder(builder: (context) {
+          return PositionedBalloon(
+            balloon: Balloon(
+              nipPosition: BalloonNipPosition.bottomRight,
+              color: Theme.of(context).colorScheme.secondary,
+              child: Text(
+                  'this balloon is\ncreated by\nfloating action button',
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSecondary),
+                  textAlign: TextAlign.right),
+            ),
+            child: FloatingActionButton(
+              onPressed: () {},
+              tooltip: 'open help',
+              child: const Icon(Icons.live_help_outlined),
+            ),
+          );
+        }));
   }
 }
