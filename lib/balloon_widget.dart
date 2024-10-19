@@ -91,7 +91,7 @@ class Balloon extends StatelessWidget {
   final Color color;
   final BorderRadius borderRadius;
   final EdgeInsets padding;
-  final double elevation;
+  final double elevation; // todo: change to BoxShadow
   final Color shadowColor;
   final BalloonNipPosition nipPosition;
   final double nipSize;
@@ -195,7 +195,6 @@ class Balloon extends StatelessWidget {
         delegate: _BalloonNoSizeLayoutDelegate(
           nipPosition: nipPosition,
           nipSize: nipSize,
-          nipRadius: nipRadius,
           nipMargin: nipMargin,
           borderRadius: borderRadius,
           padding: padding,
@@ -214,7 +213,8 @@ double _calcNipHeight(double nipSize) {
 
 double _getRealNipHeight(double nipSize, double nipRadius) {
   final baseHeight = _calcNipHeight(nipSize);
-  final radiusAdjustment = nipRadius * math.sqrt(2) / 2; // sin(45) = sqrt(2) / 2
+  // sin(45) = sqrt(2) / 2
+  final radiusAdjustment = nipRadius * math.sqrt(2) / 2;
   return baseHeight - radiusAdjustment;
 }
 
@@ -222,7 +222,6 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
   final BalloonNipPosition nipPosition;
   final double nipSize;
   final double nipMargin;
-  final double nipRadius;
   final BorderRadius borderRadius;
   final EdgeInsets padding;
 
@@ -230,7 +229,6 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
     required this.nipPosition,
     required this.nipSize,
     required this.nipMargin,
-    required this.nipRadius,
     required this.borderRadius,
     required this.padding,
   });
@@ -242,32 +240,23 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
-    final nipOffset = _calculateNipOffset(childSize);
-    final nipHeight = _getRealNipHeight(nipSize, nipRadius);
-
-    final double dx = -nipOffset.dx;
-    final double dy =
-        -nipOffset.dy + (nipPosition.isTop ? nipHeight : -nipHeight);
-
-    return Offset(dx, dy);
+    final Offset nipOffset = _calculateNipOffset(childSize);
+    return nipOffset * -1;
   }
 
   Offset _calculateNipOffset(Size childSize) {
-    final nipHeight = _getRealNipHeight(nipSize, nipRadius);
+    final Size(width: cw, height: ch) = childSize;
+    final baseDx = (nipMargin + (nipSize / 2));
 
-    final double dx;
-    if (nipPosition.isCenter) {
-      dx = childSize.width / 2;
-    } else if (nipPosition.isLeft) {
-      dx = nipMargin + borderRadius.topLeft.x + nipSize / 2;
-    } else {
-      dx =
-          childSize.width - (nipMargin + borderRadius.topRight.x + nipSize / 2);
-    }
-
-    final double dy =
-        nipPosition.isTop ? nipHeight : childSize.height - nipHeight;
-
+    final double dx = switch (nipPosition) {
+      BalloonNipPosition.topCenter || BalloonNipPosition.bottomCenter => cw / 2,
+      BalloonNipPosition.topLeft => borderRadius.topLeft.x + baseDx,
+      BalloonNipPosition.bottomLeft => borderRadius.bottomLeft.x + baseDx,
+      BalloonNipPosition.topRight => cw - (borderRadius.topRight.x + baseDx),
+      BalloonNipPosition.bottomRight =>
+        cw - (borderRadius.bottomRight.x + baseDx),
+    };
+    final double dy = nipPosition.isTop ? 0.0 : ch;
     return Offset(dx, dy);
   }
 
