@@ -39,41 +39,37 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          backgroundColor: Theme
-              .of(context)
-              .colorScheme
-              .inversePrimary,
+          backgroundColor: Theme.of(context).colorScheme.inversePrimary,
           title: Text(widget.title),
         ),
         body: Center(
             child:
-            Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              ...BalloonNipPosition.values.map((e) =>
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Balloon(nipPosition: e, child: Text(e.name)),
-                  ))
-            ])),
+                Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          ...BalloonNipPosition.values.map((e) => Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Balloon(nipPosition: e, child: Text(e.name)),
+              ))
+        ])),
         floatingActionButton: ValueListenableBuilder(
             valueListenable: showTooltip,
             builder: (context, value, child) {
-              return PositionedBalloon(
-                show: value,
+              return PositionedBalloon.decorateBuilder(
                 balloon: Balloon(
                   nipPosition: BalloonNipPosition.bottomRight,
-                  color: Theme
-                      .of(context)
-                      .colorScheme
-                      .secondary,
+                  color: Theme.of(context).colorScheme.secondary,
                   child: Text(
                       'this balloon is\ncreated by\nfloating action button',
                       style: TextStyle(
-                          color: Theme
-                              .of(context)
-                              .colorScheme
-                              .onSecondary),
+                          color: Theme.of(context).colorScheme.onSecondary),
                       textAlign: TextAlign.right),
                 ),
+                balloonDecorateBuilder: (context, balloon) {
+                  return AnimatedOpacity(
+                      opacity: value ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 100),
+                      curve: Curves.easeInOut,
+                      child: balloon);
+                },
                 child: FloatingActionButton(
                   onPressed: () {
                     showTooltip.value = !showTooltip.value;

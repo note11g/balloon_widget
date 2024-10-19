@@ -33,6 +33,8 @@ class PositionedBalloon extends StatelessWidget {
   final bool show;
   final double yOffset;
   final Balloon balloon;
+  final Widget Function(BuildContext context, Balloon balloon)?
+      balloonDecorateBuilder;
   final Widget child;
 
   const PositionedBalloon({
@@ -41,21 +43,36 @@ class PositionedBalloon extends StatelessWidget {
     this.yOffset = 4,
     required this.balloon,
     required this.child,
-  });
+  }) : balloonDecorateBuilder = null;
+
+  const PositionedBalloon.decorateBuilder({
+    super.key,
+    this.yOffset = 4,
+    required this.balloonDecorateBuilder,
+    required this.balloon,
+    required this.child,
+  }) : show = true;
 
   @override
   Widget build(BuildContext context) {
     final isTop = balloon.nipPosition.isTop;
     return Stack(clipBehavior: Clip.none, children: [
       child,
-      if (show)
+      if (show || balloonDecorateBuilder != null)
         Positioned(
           top: isTop ? null : 0 - yOffset,
           bottom: isTop ? -1 - yOffset : null,
           left: 1,
           right: 0,
           child: Center(
-            child: UnconstrainedBox(child: balloon.toNoSize()),
+            child: UnconstrainedBox(
+                child: balloonDecorateBuilder != null
+                    ? Builder(
+                        builder: (context) {
+                          return balloonDecorateBuilder!
+                            .call(context, balloon.toNoSize());
+                        })
+                    : balloon.toNoSize()),
           ),
         ),
     ]);
