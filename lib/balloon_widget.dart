@@ -207,7 +207,9 @@ class Balloon extends StatelessWidget {
   }
 }
 
-double _calcNipHeight(double nipSize) => nipSize / 2 * math.sqrt(2);
+double _calcNipHeight(double nipSize) {
+  return nipSize / 2 * math.sqrt(2);
+}
 
 class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
   final BalloonNipPosition nipPosition;
@@ -234,14 +236,9 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
     final nipOffset = _calculateNipOffset(childSize);
     final nipHeight = _calcNipHeight(nipSize);
 
-    double dx = -nipOffset.dx;
-    double dy;
-
-    if (nipPosition.isTop) {
-      dy = -nipOffset.dy + nipHeight;
-    } else {
-      dy = -nipOffset.dy - nipHeight;
-    }
+    final double dx = -nipOffset.dx;
+    final double dy =
+        -nipOffset.dy + (nipPosition.isTop ? -nipHeight : -nipHeight);
 
     return Offset(dx, dy);
   }
@@ -249,7 +246,7 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
   Offset _calculateNipOffset(Size childSize) {
     final nipHeight = _calcNipHeight(nipSize);
 
-    double dx;
+    final double dx;
     if (nipPosition.isCenter) {
       dx = childSize.width / 2;
     } else if (nipPosition.isLeft) {
@@ -259,12 +256,8 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
           childSize.width - (nipMargin + borderRadius.topRight.x + nipSize / 2);
     }
 
-    double dy;
-    if (nipPosition.isTop) {
-      dy = nipHeight;
-    } else {
-      dy = childSize.height - nipHeight;
-    }
+    final double dy =
+        nipPosition.isTop ? nipHeight : childSize.height - nipHeight;
 
     return Offset(dx, dy);
   }
