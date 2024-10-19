@@ -46,10 +46,9 @@ class PositionedBalloon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isTop = balloon.nipPosition.isTop;
-    return Offstage(
-      offstage: !show,
-      child: Stack(clipBehavior: Clip.none, children: [
-        child,
+    return Stack(clipBehavior: Clip.none, children: [
+      child,
+      if (show)
         Positioned(
           top: isTop ? null : 0 - yOffset,
           bottom: isTop ? -1 - yOffset : null,
@@ -59,8 +58,7 @@ class PositionedBalloon extends StatelessWidget {
             child: UnconstrainedBox(child: balloon.toNoSize()),
           ),
         ),
-      ]),
-    );
+    ]);
   }
 }
 
