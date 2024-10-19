@@ -403,14 +403,14 @@ class _BalloonPainter extends CustomPainter {
     for (int i = 0; i < lines.length; i++) {
       final (start, end, rad) = lines[i];
       if (i == nipLineIdx) {
-        path.drawNip(start, end,
+        path._drawNip(start, end,
             nipSize: nipSize,
             nipMargin: nipMargin,
             nipPosition: nipPosition,
             nipRadius: nipRadius);
       } else {
         if (i == 0) path.moveTo(start.dx, start.dy);
-        path.lineToPoint(end);
+        path._lineToPoint(end);
       }
       // next round(arc)
       final nextIdx = i != lines.length - 1 ? i + 1 : 0;
@@ -435,9 +435,9 @@ class _BalloonPainter extends CustomPainter {
 }
 
 extension _BalloonPathExtension on Path {
-  void lineToPoint(Offset point) => lineTo(point.dx, point.dy);
+  void _lineToPoint(Offset point) => lineTo(point.dx, point.dy);
 
-  void drawNip(
+  void _drawNip(
     Offset start,
     Offset end, {
     required double nipSize,
@@ -477,11 +477,11 @@ extension _BalloonPathExtension on Path {
       nipRoundStartPoint.dy,
     );
 
-    lineToPoint(start);
+    _lineToPoint(start);
     lineTo(nipStartX, start.dy);
-    lineToPoint(nipRoundStartPoint);
+    _lineToPoint(nipRoundStartPoint);
     arcToPoint(nipRoundEndPoint, radius: Radius.circular(nipRadius));
     lineTo(nipEndX, end.dy);
-    lineToPoint(end);
+    _lineToPoint(end);
   }
 }
