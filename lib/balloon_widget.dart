@@ -23,6 +23,68 @@ enum BalloonNipPosition {
   bool get isCenter =>
       this == BalloonNipPosition.topCenter ||
       this == BalloonNipPosition.bottomCenter;
+
+  bool get isLeft =>
+      this == BalloonNipPosition.topLeft ||
+      this == BalloonNipPosition.bottomLeft;
+}
+
+/// `PositionedBalloon` is a decorator widget that provide the `Balloon` widget similar to Flutter’s built-in [`Tooltip`](https://api.flutter.dev/flutter/material/Tooltip-class.html),
+/// allowing it to describe child widgets.
+///
+/// By integrating directly into the widget tree, it avoids using the [Overlay](https://api.flutter.dev/flutter/widgets/Overlay-class.html) API,
+/// so developers do not need to manage its lifecycle.
+///
+class PositionedBalloon extends StatelessWidget {
+  final bool show;
+  final double yOffset;
+  final Balloon balloon;
+  final Widget Function(BuildContext context, Balloon balloon)?
+      balloonDecorateBuilder;
+  final Widget child;
+
+  const PositionedBalloon({
+    super.key,
+    this.show = true,
+    this.yOffset = 4,
+    required this.balloon,
+    required this.child,
+  }) : balloonDecorateBuilder = null;
+
+  /// Decorate the balloon with a custom widget wrapping.
+  ///
+  /// If you want to decorate the balloon with a custom widget, use this constructor.
+  const PositionedBalloon.decorateBuilder({
+    super.key,
+    this.yOffset = 4,
+    required this.balloonDecorateBuilder,
+    required this.balloon,
+    required this.child,
+  }) : show = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final isTop = balloon.nipPosition.isTop;
+    return Stack(clipBehavior: Clip.none, children: [
+      child,
+      if (show || balloonDecorateBuilder != null)
+        Positioned(
+          top: isTop ? null : 0 - yOffset,
+          bottom: isTop ? -1 - yOffset : null,
+          left: 1,
+          right: 0,
+          child: Center(
+            child: UnconstrainedBox(
+                child: balloonDecorateBuilder != null
+                    ? Builder(builder: (context) {
+                        return balloonDecorateBuilder!
+                            .call(context, balloon.toNoSize());
+                      })
+                    : balloon.toNoSize()),
+          ),
+        ),
+    ]);
+  }
 }
 
 class Balloon extends StatelessWidget {
@@ -42,6 +104,7 @@ class Balloon extends StatelessWidget {
   final double nipMargin;
   final double nipRadius;
   final bool isHeightIncludingNip;
+  final bool oneByOneSize;
   final Widget child;
 
   const Balloon({
@@ -57,36 +120,162 @@ class Balloon extends StatelessWidget {
     this.nipRadius = 2,
     this.isHeightIncludingNip = true,
     required this.child,
-  });
+  }) : oneByOneSize = false;
+
+  /// Draw a balloon at 1px x 1px.
+  ///
+  /// that widget take only 1px x 1px size.
+  ///
+  /// 1px x 1px is located at the nip target position.
+  ///
+  /// but, drawing normal size.
+  const Balloon.noSize({
+    super.key,
+    this.color = Colors.white,
+    this.borderRadius = const BorderRadius.all(Radius.circular(8)),
+    this.padding = const EdgeInsets.all(8),
+    this.elevation = 4,
+    this.shadowColor = Colors.black26,
+    this.nipPosition = BalloonNipPosition.bottomRight,
+    this.nipSize = 12,
+    this.nipMargin = 4,
+    this.nipRadius = 2,
+    required this.child,
+  })  : isHeightIncludingNip = true,
+        oneByOneSize = true;
+
+  Balloon toNoSize() {
+    return Balloon.noSize(
+      color: color,
+      borderRadius: borderRadius,
+      padding: padding,
+      elevation: elevation,
+      shadowColor: shadowColor,
+      nipPosition: nipPosition,
+      nipSize: nipSize,
+      nipMargin: nipMargin,
+      nipRadius: nipRadius,
+      child: child,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final nipHeight = _calcNipHeight(nipSize);
-    return Padding(
-        padding: isHeightIncludingNip
-            ? EdgeInsets.only(
-                top: nipPosition.isTop ? nipHeight : 0,
-                bottom: !nipPosition.isTop ? nipHeight : 0,
-              )
-            : EdgeInsets.zero,
-        child: CustomPaint(
-            painter: _BalloonPainter(
-              color: color,
-              borderRadius: borderRadius,
-              elevation: elevation,
-              shadowColor: shadowColor,
-              nipPosition: nipPosition,
-              nipMargin: nipMargin,
-              nipSize: nipSize,
-              nipRadius: nipRadius,
-            ),
-            child: ClipRRect(
-              borderRadius: borderRadius,
-              child: Padding(
-                padding: padding,
-                child: child,
-              ),
-            )));
+    final balloonWidget = Padding(
+      padding: isHeightIncludingNip
+          ? EdgeInsets.only(
+              top: nipPosition.isTop ? nipHeight : 0,
+              bottom: !nipPosition.isTop ? nipHeight : 0,
+            )
+          : EdgeInsets.zero,
+      child: CustomPaint(
+        painter: _BalloonPainter(
+          color: color,
+          borderRadius: borderRadius,
+          elevation: elevation,
+          shadowColor: shadowColor,
+          nipPosition: nipPosition,
+          nipMargin: nipMargin,
+          nipSize: nipSize,
+          nipRadius: nipRadius,
+        ),
+        child: ClipRRect(
+          borderRadius: borderRadius,
+          child: Padding(
+            padding: padding,
+            child: child,
+          ),
+        ),
+      ),
+    );
+
+    if (oneByOneSize) {
+      return CustomSingleChildLayout(
+        delegate: _BalloonNoSizeLayoutDelegate(
+          nipPosition: nipPosition,
+          nipSize: nipSize,
+          nipMargin: nipMargin,
+          borderRadius: borderRadius,
+          padding: padding,
+        ),
+        child: balloonWidget,
+      );
+    } else {
+      return balloonWidget;
+    }
+  }
+}
+
+double _calcNipHeight(double nipSize) => nipSize / 2 * math.sqrt(2);
+
+class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
+  final BalloonNipPosition nipPosition;
+  final double nipSize;
+  final double nipMargin;
+  final BorderRadius borderRadius;
+  final EdgeInsets padding;
+
+  _BalloonNoSizeLayoutDelegate({
+    required this.nipPosition,
+    required this.nipSize,
+    required this.nipMargin,
+    required this.borderRadius,
+    required this.padding,
+  });
+
+  @override
+  Size getSize(BoxConstraints constraints) {
+    return const Size(1, 1);
+  }
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final nipOffset = _calculateNipOffset(childSize);
+    final nipHeight = _calcNipHeight(nipSize);
+
+    double dx = -nipOffset.dx;
+    double dy;
+
+    if (nipPosition.isTop) {
+      dy = -nipOffset.dy + nipHeight;
+    } else {
+      dy = -nipOffset.dy - nipHeight;
+    }
+
+    return Offset(dx, dy);
+  }
+
+  Offset _calculateNipOffset(Size childSize) {
+    final nipHeight = _calcNipHeight(nipSize);
+
+    double dx;
+    if (nipPosition.isCenter) {
+      dx = childSize.width / 2;
+    } else if (nipPosition.isLeft) {
+      dx = nipMargin + borderRadius.topLeft.x + nipSize / 2;
+    } else {
+      dx =
+          childSize.width - (nipMargin + borderRadius.topRight.x + nipSize / 2);
+    }
+
+    double dy;
+    if (nipPosition.isTop) {
+      dy = nipHeight;
+    } else {
+      dy = childSize.height - nipHeight;
+    }
+
+    return Offset(dx, dy);
+  }
+
+  @override
+  bool shouldRelayout(_BalloonNoSizeLayoutDelegate oldDelegate) {
+    return oldDelegate.nipPosition != nipPosition ||
+        oldDelegate.nipSize != nipSize ||
+        oldDelegate.nipMargin != nipMargin ||
+        oldDelegate.borderRadius != borderRadius ||
+        oldDelegate.padding != padding;
   }
 }
 
@@ -296,5 +485,3 @@ extension _BalloonPathExtension on Path {
     lineToPoint(end);
   }
 }
-
-double _calcNipHeight(double nipSize) => nipSize / 2 * math.sqrt(2);
