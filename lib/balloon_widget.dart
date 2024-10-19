@@ -29,6 +29,12 @@ enum BalloonNipPosition {
       this == BalloonNipPosition.bottomLeft;
 }
 
+/// `PositionedBalloon` is a decorator widget that provide the `Balloon` widget similar to Flutter’s built-in [`Tooltip`](https://api.flutter.dev/flutter/material/Tooltip-class.html),
+/// allowing it to describe child widgets.
+///
+/// By integrating directly into the widget tree, it avoids using the [Overlay](https://api.flutter.dev/flutter/widgets/Overlay-class.html) API,
+/// so developers do not need to manage its lifecycle.
+///
 class PositionedBalloon extends StatelessWidget {
   final bool show;
   final double yOffset;
@@ -45,6 +51,9 @@ class PositionedBalloon extends StatelessWidget {
     required this.child,
   }) : balloonDecorateBuilder = null;
 
+  /// Decorate the balloon with a custom widget wrapping.
+  ///
+  /// If you want to decorate the balloon with a custom widget, use this constructor.
   const PositionedBalloon.decorateBuilder({
     super.key,
     this.yOffset = 4,
@@ -67,11 +76,10 @@ class PositionedBalloon extends StatelessWidget {
           child: Center(
             child: UnconstrainedBox(
                 child: balloonDecorateBuilder != null
-                    ? Builder(
-                        builder: (context) {
-                          return balloonDecorateBuilder!
+                    ? Builder(builder: (context) {
+                        return balloonDecorateBuilder!
                             .call(context, balloon.toNoSize());
-                        })
+                      })
                     : balloon.toNoSize()),
           ),
         ),
