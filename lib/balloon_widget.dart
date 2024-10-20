@@ -87,12 +87,25 @@ class PositionedBalloon extends StatelessWidget {
   }
 }
 
+sealed class BalloonShadow {
+  factory BalloonShadow.material(
+      {double elevation = 4, Color shadowColor = Colors.black26}) {
+    return MaterialBalloonShadow(
+        elevation: elevation, shadowColor: shadowColor);
+  }
+
+  factory BalloonShadow.custom({required List<BoxShadow> shadows}) {
+    return CustomBalloonShadow(shadows: shadows);
+  }
+
+  void _renderShadows(Canvas canvas, Path path, Size size);
+}
+
 class Balloon extends StatelessWidget {
   final Color color;
   final BorderRadius borderRadius;
   final EdgeInsets padding;
-  final double elevation; // todo: change to BoxShadow
-  final Color shadowColor;
+  final BalloonShadow? shadow;
   final BalloonNipPosition nipPosition;
   final double nipSize;
 
@@ -112,8 +125,7 @@ class Balloon extends StatelessWidget {
     this.color = Colors.white,
     this.borderRadius = const BorderRadius.all(Radius.circular(8)),
     this.padding = const EdgeInsets.all(8),
-    this.elevation = 4,
-    this.shadowColor = Colors.black26,
+    this.shadow = const MaterialBalloonShadow(),
     this.nipPosition = BalloonNipPosition.bottomRight,
     this.nipSize = 12,
     this.nipMargin = 4,
@@ -134,8 +146,7 @@ class Balloon extends StatelessWidget {
     this.color = Colors.white,
     this.borderRadius = const BorderRadius.all(Radius.circular(8)),
     this.padding = const EdgeInsets.all(8),
-    this.elevation = 4,
-    this.shadowColor = Colors.black26,
+    this.shadow = const MaterialBalloonShadow(),
     this.nipPosition = BalloonNipPosition.bottomRight,
     this.nipSize = 12,
     this.nipMargin = 4,
@@ -149,8 +160,7 @@ class Balloon extends StatelessWidget {
       color: color,
       borderRadius: borderRadius,
       padding: padding,
-      elevation: elevation,
-      shadowColor: shadowColor,
+      shadow: shadow,
       nipPosition: nipPosition,
       nipSize: nipSize,
       nipMargin: nipMargin,
@@ -173,8 +183,8 @@ class Balloon extends StatelessWidget {
         painter: _BalloonPainter(
           color: color,
           borderRadius: borderRadius,
-          elevation: elevation,
-          shadowColor: shadowColor,
+          shadowRenderer:
+              shadow != null ? _ShadowRenderer(strategy: shadow!) : null,
           nipPosition: nipPosition,
           nipMargin: nipMargin,
           nipSize: nipSize,
@@ -270,10 +280,29 @@ class _BalloonNoSizeLayoutDelegate extends SingleChildLayoutDelegate {
   }
 }
 
+class _ShadowRenderer {
+  final BalloonShadow strategy;
+
+  _ShadowRenderer({required this.strategy});
+
+  void renderShadows(Canvas canvas, Path path, Size size) {
+    strategy._renderShadows(canvas, path, size);
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _ShadowRenderer &&
+          runtimeType == other.runtimeType &&
+          strategy == other.strategy;
+
+  @override
+  int get hashCode => strategy.hashCode ^ runtimeType.hashCode;
+}
+
 class _BalloonPainter extends CustomPainter {
   final Color color;
-  final Color shadowColor;
-  final double elevation;
+  final _ShadowRenderer? shadowRenderer;
   final double nipSize;
   final BorderRadius borderRadius;
   final BalloonNipPosition nipPosition;
@@ -282,8 +311,7 @@ class _BalloonPainter extends CustomPainter {
 
   _BalloonPainter({
     required this.color,
-    required this.shadowColor,
-    required this.elevation,
+    required this.shadowRenderer,
     required this.nipSize,
     required this.nipMargin,
     required this.borderRadius,
@@ -296,10 +324,11 @@ class _BalloonPainter extends CustomPainter {
     final path = drawPath(
         size, calibrateBorderRadius(borderRadius: borderRadius, size: size));
 
+    shadowRenderer?.renderShadows(canvas, path, size);
+
     final paint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
-    if (elevation > 0) canvas.drawShadow(path, shadowColor, elevation, true);
     canvas.drawPath(path, paint);
   }
 
@@ -415,8 +444,7 @@ class _BalloonPainter extends CustomPainter {
   @override
   bool shouldRepaint(_BalloonPainter oldDelegate) {
     return oldDelegate.color != color ||
-        oldDelegate.shadowColor != shadowColor ||
-        oldDelegate.elevation != elevation ||
+        oldDelegate.shadowRenderer != shadowRenderer ||
         oldDelegate.nipSize != nipSize ||
         oldDelegate.nipMargin != nipMargin ||
         oldDelegate.nipPosition != nipPosition ||
@@ -474,5 +502,96 @@ extension _BalloonPathExtension on Path {
     arcToPoint(nipRoundEndPoint, radius: Radius.circular(nipRadius));
     lineTo(nipEndX, end.dy);
     _lineToPoint(end);
+  }
+}
+
+class MaterialBalloonShadow implements BalloonShadow {
+  final double elevation;
+  final Color shadowColor;
+
+  const MaterialBalloonShadow({
+    this.elevation = 4,
+    this.shadowColor = Colors.black26,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MaterialBalloonShadow &&
+          runtimeType == other.runtimeType &&
+          elevation == other.elevation &&
+          shadowColor == other.shadowColor;
+
+  @override
+  int get hashCode => elevation.hashCode ^ shadowColor.hashCode;
+
+  @override
+  String toString() {
+    return 'MaterialBalloonShadow{elevation: $elevation, shadowColor: $shadowColor}';
+  }
+
+  @override
+  void _renderShadows(Canvas canvas, Path path, Size size) {
+    if (elevation > 0) {
+      canvas.drawShadow(path, shadowColor, elevation, true);
+    }
+  }
+}
+
+class CustomBalloonShadow implements BalloonShadow {
+  final List<BoxShadow> shadows;
+
+  const CustomBalloonShadow({required this.shadows});
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+
+    if (other is CustomBalloonShadow && runtimeType == other.runtimeType) {
+      if (shadows.length != other.shadows.length) return false;
+      for (int i = 0; i < shadows.length; i++) {
+        if (shadows[i] != other.shadows[i]) return false;
+      }
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  @override
+  int get hashCode => shadows.hashCode;
+
+  @override
+  String toString() {
+    return 'CustomBalloonShadow{shadows: $shadows}';
+  }
+
+  @override
+  void _renderShadows(Canvas canvas, Path path, Size size) {
+    for (final boxShadow in shadows) {
+      final shadowPath = path.shift(boxShadow.offset);
+      final shadowPaint = Paint()
+        ..color = boxShadow.color
+        ..maskFilter = boxShadow.blurRadius > 0
+            ? MaskFilter.blur(BlurStyle.normal, boxShadow.blurRadius * 0.5)
+            : const MaskFilter.blur(BlurStyle.solid, 0);
+
+      Path adjustedPath = shadowPath;
+      if (boxShadow.spreadRadius != 0) {
+        adjustedPath =
+            _adjustPathSpread(shadowPath, boxShadow.spreadRadius, size);
+      }
+
+      canvas.drawPath(adjustedPath, shadowPaint);
+    }
+  }
+
+  Path _adjustPathSpread(Path path, double spreadRadius, Size size) {
+    final Matrix4 matrix = Matrix4.identity();
+    final double scaleX = 1 + spreadRadius / size.width;
+    final double scaleY = 1 + spreadRadius / size.height;
+    matrix.scale(scaleX, scaleY);
+    final Path adjustedPath = path.transform(matrix.storage);
+    return adjustedPath;
   }
 }
