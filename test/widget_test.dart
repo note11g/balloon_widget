@@ -186,6 +186,63 @@ void main() {
     await screenMatchesGolden(tester, 'shadow_grid');
   });
 
+  testGoldens('custom shadow check', (tester) async {
+    await loadAppFonts();
+
+    const textWidget = Text("Hello Flutter!");
+    final builder = GoldenBuilder.grid(
+        columns: 3,
+        widthToHeightRatio: 0.7,
+        wrap: (child) => Flexible(
+                child: Align(
+              alignment: Alignment.bottomCenter,
+              child: child,
+            )))
+      ..addScenario(
+          'shadow: CustomBalloonShadow(\nBoxShadow(color: black12, offset: 0, 2, blur: 4, spread: 0))',
+          const Balloon(
+              shadow: CustomBalloonShadow(shadows: [
+                BoxShadow(
+                    color: Colors.black12,
+                    offset: Offset(0, 2),
+                    blurRadius: 4,
+                    spreadRadius: 0)
+              ]),
+              child: textWidget))
+      ..addScenario(
+          '[Edge Case] shadow: CustomBalloonShadow([\n'
+          'BoxShadow(color: red, offset: -4, -8),\n'
+          'BoxShadow(color: black54, offset: 4, 8]], color: white54)',
+          const Balloon(
+              color: Colors.white54,
+              shadow: CustomBalloonShadow(shadows: [
+                BoxShadow(color: Colors.red, offset: Offset(-4, -8)),
+                BoxShadow(color: Colors.black54, offset: Offset(4, 8)),
+              ]),
+              child: textWidget))
+      ..addScenario(
+          'shadow: CustomBalloonShadow([\n'
+          'BoxShadow(color: deepPurpleAccent 0.32, offset: -4, -8, blur: 4, spread: 2),\n'
+          'BoxShadow(color: redAccent 0.48, offset: 4, 8, blur: 8, spread: 0)])',
+          Balloon(
+              shadow: CustomBalloonShadow(shadows: [
+                BoxShadow(
+                    color: Colors.deepPurpleAccent.withOpacity(0.32),
+                    blurRadius: 4,
+                    offset: const Offset(-4, -8),
+                    spreadRadius: 2),
+                BoxShadow(
+                    color: Colors.redAccent.withOpacity(0.48),
+                    offset: const Offset(4, 8),
+                    blurRadius: 8,
+                    spreadRadius: 0),
+              ]),
+              child: textWidget));
+
+    await tester.pumpWidgetBuilder(builder.build());
+    await screenMatchesGolden(tester, 'custom_shadow_grid');
+  });
+
   testGoldens('borderRadius and balloon color check', (tester) async {
     await loadAppFonts();
 
