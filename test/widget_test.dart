@@ -151,23 +151,35 @@ void main() {
     const textWidget = Text("Hello Flutter!");
     final builder = GoldenBuilder.grid(columns: 3, widthToHeightRatio: 1)
       ..addScenario(
-          'elevation: 0', const Balloon(elevation: 0, child: textWidget))
+          'elevation: 0',
+          const Balloon(
+              shadow: MaterialBalloonShadow(elevation: 0),
+              child: textWidget))
       ..addScenario('elevation: 4 (default), shadowColor: black26 (default)',
           const Balloon(child: textWidget))
       ..addScenario(
           'elevation: 12, shadowColor: black87',
           const Balloon(
-              shadowColor: Colors.black87, elevation: 12, child: textWidget))
+              shadow: MaterialBalloonShadow(
+                  elevation: 12, shadowColor: Colors.black87),
+              child: textWidget))
       ..addScenario(
           'elevation: 24, shadowColor: redAccent',
           const Balloon(
-              shadowColor: Colors.redAccent, elevation: 24, child: textWidget))
-      ..addScenario('shadowColor: black54',
-          const Balloon(shadowColor: Colors.black54, child: textWidget))
+              shadow: MaterialBalloonShadow(
+                  elevation: 24, shadowColor: Colors.redAccent),
+              child: textWidget))
+      ..addScenario(
+          'shadowColor: black54',
+          const Balloon(
+              shadow: MaterialBalloonShadow(
+                  shadowColor: Colors.black54),
+              child: textWidget))
       ..addScenario(
           'shadowColor: deepPurpleAccent 0.32',
           Balloon(
-              shadowColor: Colors.deepPurpleAccent.withOpacity(0.32),
+              shadow: MaterialBalloonShadow(
+                  shadowColor: Colors.deepPurpleAccent.withOpacity(0.32)),
               child: textWidget));
 
     await tester.pumpWidgetBuilder(builder.build());
