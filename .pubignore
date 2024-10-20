@@ -1,0 +1,10 @@
+*.iml
+*.ipr
+*.iws
+.idea/
+.github/
+doc/
+build/
+.fvm/
+.dart_tool/
+test/

@@ -151,27 +151,96 @@ void main() {
     const textWidget = Text("Hello Flutter!");
     final builder = GoldenBuilder.grid(columns: 3, widthToHeightRatio: 1)
       ..addScenario(
-          'elevation: 0', const Balloon(elevation: 0, child: textWidget))
+          'elevation: 0',
+          const Balloon(
+              shadow: MaterialBalloonShadow(elevation: 0),
+              child: textWidget))
       ..addScenario('elevation: 4 (default), shadowColor: black26 (default)',
           const Balloon(child: textWidget))
       ..addScenario(
           'elevation: 12, shadowColor: black87',
           const Balloon(
-              shadowColor: Colors.black87, elevation: 12, child: textWidget))
+              shadow: MaterialBalloonShadow(
+                  elevation: 12, shadowColor: Colors.black87),
+              child: textWidget))
       ..addScenario(
           'elevation: 24, shadowColor: redAccent',
           const Balloon(
-              shadowColor: Colors.redAccent, elevation: 24, child: textWidget))
-      ..addScenario('shadowColor: black54',
-          const Balloon(shadowColor: Colors.black54, child: textWidget))
+              shadow: MaterialBalloonShadow(
+                  elevation: 24, shadowColor: Colors.redAccent),
+              child: textWidget))
+      ..addScenario(
+          'shadowColor: black54',
+          const Balloon(
+              shadow: MaterialBalloonShadow(
+                  shadowColor: Colors.black54),
+              child: textWidget))
       ..addScenario(
           'shadowColor: deepPurpleAccent 0.32',
           Balloon(
-              shadowColor: Colors.deepPurpleAccent.withOpacity(0.32),
+              shadow: MaterialBalloonShadow(
+                  shadowColor: Colors.deepPurpleAccent.withOpacity(0.32)),
               child: textWidget));
 
     await tester.pumpWidgetBuilder(builder.build());
     await screenMatchesGolden(tester, 'shadow_grid');
+  });
+
+  testGoldens('custom shadow check', (tester) async {
+    await loadAppFonts();
+
+    const textWidget = Text("Hello Flutter!");
+    final builder = GoldenBuilder.grid(
+        columns: 3,
+        widthToHeightRatio: 0.7,
+        wrap: (child) => Flexible(
+                child: Align(
+              alignment: Alignment.bottomCenter,
+              child: child,
+            )))
+      ..addScenario(
+          'shadow: CustomBalloonShadow(\nBoxShadow(color: black12, offset: 0, 2, blur: 4, spread: 0))',
+          const Balloon(
+              shadow: CustomBalloonShadow(shadows: [
+                BoxShadow(
+                    color: Colors.black12,
+                    offset: Offset(0, 2),
+                    blurRadius: 4,
+                    spreadRadius: 0)
+              ]),
+              child: textWidget))
+      ..addScenario(
+          '[Edge Case] shadow: CustomBalloonShadow([\n'
+          'BoxShadow(color: red, offset: -4, -8),\n'
+          'BoxShadow(color: black54, offset: 4, 8]], color: white54)',
+          const Balloon(
+              color: Colors.white54,
+              shadow: CustomBalloonShadow(shadows: [
+                BoxShadow(color: Colors.red, offset: Offset(-4, -8)),
+                BoxShadow(color: Colors.black54, offset: Offset(4, 8)),
+              ]),
+              child: textWidget))
+      ..addScenario(
+          'shadow: CustomBalloonShadow([\n'
+          'BoxShadow(color: deepPurpleAccent 0.32, offset: -4, -8, blur: 4, spread: 2),\n'
+          'BoxShadow(color: redAccent 0.48, offset: 4, 8, blur: 8, spread: 0)])',
+          Balloon(
+              shadow: CustomBalloonShadow(shadows: [
+                BoxShadow(
+                    color: Colors.deepPurpleAccent.withOpacity(0.32),
+                    blurRadius: 4,
+                    offset: const Offset(-4, -8),
+                    spreadRadius: 2),
+                BoxShadow(
+                    color: Colors.redAccent.withOpacity(0.48),
+                    offset: const Offset(4, 8),
+                    blurRadius: 8,
+                    spreadRadius: 0),
+              ]),
+              child: textWidget));
+
+    await tester.pumpWidgetBuilder(builder.build());
+    await screenMatchesGolden(tester, 'custom_shadow_grid');
   });
 
   testGoldens('borderRadius and balloon color check', (tester) async {

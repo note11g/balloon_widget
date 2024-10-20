@@ -1,3 +1,9 @@
+## 0.2.0
+
+* Add: `Balloon.shadow` property, `BalloonShadow` interface, and `MaterialBalloonShadow`, `CustomBalloonShadow` concrete class.
+* [Breaking] remove `Balloon.elevation` and `Balloon.shadowColor` properties. (Use `Balloon.shadow` instead)
+* Chore: add some API descriptions.
+
 ## 0.1.0
 
 * Add `BalloonNipPosition.topCenter`, `BalloonNipPosition.bottomCenter` (PR: [#4](https://github.com/note11g/balloon_widget/pull/4))
