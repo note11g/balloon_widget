@@ -3,18 +3,31 @@ library balloon_widget;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
+/// `BalloonNipPosition` is an enum that represents the position of the balloon's nip.
 enum BalloonNipPosition {
+  /// --^-------
   topLeft,
+  /// -----^-----
   topCenter,
+  /// --------^--
   topRight,
+  /// --⌄-------
   bottomLeft,
+  /// -----⌄-----
   bottomCenter,
+  ///
+  /// -------⌄--
   bottomRight;
 
   bool get isTop =>
       this == BalloonNipPosition.topLeft ||
       this == BalloonNipPosition.topRight ||
       this == BalloonNipPosition.topCenter;
+
+  bool get isBottom =>
+      this == BalloonNipPosition.bottomLeft ||
+      this == BalloonNipPosition.bottomRight ||
+      this == BalloonNipPosition.bottomCenter;
 
   bool get isStart =>
       this == BalloonNipPosition.topLeft ||
@@ -27,6 +40,10 @@ enum BalloonNipPosition {
   bool get isLeft =>
       this == BalloonNipPosition.topLeft ||
       this == BalloonNipPosition.bottomLeft;
+
+  bool get isRight =>
+      this == BalloonNipPosition.topRight ||
+      this == BalloonNipPosition.bottomRight;
 }
 
 /// `PositionedBalloon` is a decorator widget that provide the `Balloon` widget similar to Flutter’s built-in [`Tooltip`](https://api.flutter.dev/flutter/material/Tooltip-class.html),
@@ -37,10 +54,21 @@ enum BalloonNipPosition {
 ///
 class PositionedBalloon extends StatelessWidget {
   final bool show;
+  /// The margin between the nip and child widget.
   final double yOffset;
+
+  /// The balloon widget to be displayed.
   final Balloon balloon;
+
+  /// A function that wraps the balloon widget with a custom widget.
+  ///
+  /// e.g. `AnimatedOpacity(child: balloon)`, `ConstrainedBox(child: balloon)`, etc.
   final Widget Function(BuildContext context, Balloon balloon)?
       balloonDecorateBuilder;
+
+  /// The child widget to be displayed.
+  ///
+  /// This widget will be targeted by the balloon.
   final Widget child;
 
   const PositionedBalloon({
@@ -88,12 +116,25 @@ class PositionedBalloon extends StatelessWidget {
 }
 
 sealed class BalloonShadow {
+
+  /// same with [MaterialBalloonShadow]
+  ///
+  /// [elevation] is the z-coordinate at which to place this shadow.
+  ///
+  /// [shadowColor] is the color of the shadow.
+  ///
+  /// see also: [MaterialBalloonShadow]
   factory BalloonShadow.material(
       {double elevation = 4, Color shadowColor = Colors.black26}) {
     return MaterialBalloonShadow(
         elevation: elevation, shadowColor: shadowColor);
   }
 
+  /// Custom shadow.
+  ///
+  /// [shadows] is a similar api with Container's `BoxDecoration.boxShadow`.
+  ///
+  /// see also: [CustomBalloonShadow]
   factory BalloonShadow.custom({required List<BoxShadow> shadows}) {
     return CustomBalloonShadow(shadows: shadows);
   }
@@ -505,8 +546,21 @@ extension _BalloonPathExtension on Path {
   }
 }
 
+/// it provide [material elevation shadow](https://m3.material.io/styles/elevation/overview)
+///
+/// [elevation] is the z-coordinate at which to place this shadow.
+///
+/// [shadowColor] is the color of the shadow.
 class MaterialBalloonShadow implements BalloonShadow {
+  /// The z-coordinate at which to place this shadow.
   final double elevation;
+
+  /// The color of the shadow.
+  ///
+  /// it doesn't show raw color.
+  ///
+  /// it shows shadow color with different alpha value by each elevation value.
+  /// (if you want to know what color is rendered, see [elevation reference](https://pub.dev/documentation/shadows/latest/shadows/Elevation-class.html))
   final Color shadowColor;
 
   const MaterialBalloonShadow({
@@ -538,6 +592,15 @@ class MaterialBalloonShadow implements BalloonShadow {
   }
 }
 
+/// Custom shadow.
+///
+/// [shadows] is a similar api with Container's `BoxDecoration.boxShadow`.
+///
+/// It can be customized with offset, blurRadius, spreadRadius, and color.
+///
+/// and support multiple shadows.
+///
+/// see also: [BoxShadow](https://api.flutter.dev/flutter/painting/BoxShadow-class.html)
 class CustomBalloonShadow implements BalloonShadow {
   final List<BoxShadow> shadows;
 
