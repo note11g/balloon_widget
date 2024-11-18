@@ -13,3 +13,75 @@ a simple balloon widget.
 ![shadow_grid.png](https://github.com/note11g/balloon_widget/raw/main/test/goldens/shadow_grid.png)
 ![custom_shadow_grid.png](https://github.com/note11g/balloon_widget/raw/main/test/goldens/custom_shadow_grid.png)
 ![nip_target_position_grid.png](https://github.com/note11g/balloon_widget/raw/main/test/goldens/nip_target_position_grid.png)
+
+## Usage
+
+### Use as a widget
+
+```dart
+Balloon(
+  child: Text('Hello, Balloon!'),
+);
+```
+
+### Use as a widget which placed at the specific widget.
+
+```dart
+bool isVisible = true;
+
+@override
+Widget build(BuildContext context) {
+  return PositionedBalloon( // if you want apply decoration on balloon widget, use `PositionedBalloon.decorateBuilder` widget.
+    show: isVisible,
+    balloon: Balloon(
+      nipPosition: BalloonNipPosition.topCenter,
+      child: Row(children: [
+        Text("now go shopping, you got a event coin!"),
+        IconButton(
+            onPressed: () => setState(() => isVisible = false),
+            icon: Icon(Icons.close)),
+      ]),
+      child: TextButton(
+        onPressed: () {
+          openUrl(this.goodsUrl);
+          setState(() => isVisible = false);
+        },
+        text: Text("go shopping"),
+      ),
+    ),
+  );
+}
+```
+
+### Use as a widget which placed at the specific widget and include button on the balloon widget.
+
+```dart
+bool isVisible = true;
+
+@override
+Widget build(BuildContext context) {
+  return BalloonTapDelegator(
+      child: Scaffold(
+          body: ListView(
+              children: [
+                PositionedBalloon(
+                  show: isVisible,
+                  balloon: Balloon(
+                    nipPosition: BalloonNipPosition.topCenter,
+                    child: Row(children: [
+                      Text("now go shopping, you got a event coin!"),
+                      IconButton(
+                          onPressed: () => setState(() => isVisible = false),
+                          icon: Icon(Icons.close)),
+                      ]),
+                  child: TextButton(
+                      onPressed: () {
+                          openUrl(this.goodsUrl);
+                          setState(() => isVisible = false);
+                      },
+                      text: Text("go shopping"),
+                  ))),
+  ])));
+}
+```
+
