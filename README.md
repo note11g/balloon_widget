@@ -1,6 +1,7 @@
 # balloon_widget
 
 [![pub package](https://img.shields.io/pub/v/balloon_widget.svg?color=4285F4)](https://pub.dev/packages/balloon_widget)
+[![github](https://img.shields.io/github/stars/note11g/balloon_widget)](https://github.com/note11g/balloon_widget)
 
 a simple balloon widget.
 
