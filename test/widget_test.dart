@@ -1,8 +1,73 @@
+import 'dart:async';
+
 import 'package:balloon_widget/balloon_widget.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:golden_toolkit/golden_toolkit.dart';
 
 void main() {
+  group("PositionedBalloon hitTest", () {
+    PositionedBalloon balloonCreator(Completer<bool> completer,
+            {required BalloonNipPosition pos}) =>
+        PositionedBalloon(
+            balloon: Balloon(
+                nipPosition: pos,
+                child: Column(children: [
+                  IconButton(
+                      onPressed: () => completer.complete(true),
+                      icon: const Icon(Icons.add)),
+                  const Text("Hello Flutter!"),
+                ])),
+            child: Container(width: 64, height: 64, color: Colors.redAccent));
+
+    testWidgets('PositionedBalloon hitTest on Scaffold.body', (tester) async {
+      final completer = Completer<bool>();
+
+      await tester.pumpWidget(MaterialApp(
+          home: SizedBox(
+              width: 800,
+              height: 800,
+              child: BalloonTapDelegator(
+                child: Scaffold(
+                    body: balloonCreator(completer,
+                        pos: BalloonNipPosition.topLeft)),
+              ))));
+
+      await tester.pumpAndSettle();
+      final buttonFinder = find.byType(IconButton);
+
+      /// check tap
+      await tester.tap(buttonFinder);
+      await tester.pumpAndSettle();
+      expect(completer.isCompleted, true);
+      expect(await completer.future, true);
+    });
+
+    testWidgets('PositionedBalloon hitTest on ListView', (tester) async {
+      final completer = Completer<bool>();
+
+      await tester.pumpWidget(MaterialApp(
+          home: SizedBox(
+              width: 800,
+              height: 800,
+              child: Scaffold(
+                  body: BalloonTapDelegator(
+                child: ListView(children: [
+                  balloonCreator(completer, pos: BalloonNipPosition.topCenter)
+                ]),
+              )))));
+
+      await tester.pumpAndSettle();
+      final buttonFinder = find.byType(IconButton);
+
+      /// check tap
+      await tester.tap(buttonFinder);
+      await tester.pumpAndSettle();
+      expect(completer.isCompleted, true);
+      expect(await completer.future, true);
+    });
+  });
+
   testGoldens('Nip Position should look correct', (tester) async {
     await loadAppFonts();
 
@@ -153,8 +218,7 @@ void main() {
       ..addScenario(
           'elevation: 0',
           const Balloon(
-              shadow: MaterialBalloonShadow(elevation: 0),
-              child: textWidget))
+              shadow: MaterialBalloonShadow(elevation: 0), child: textWidget))
       ..addScenario('elevation: 4 (default), shadowColor: black26 (default)',
           const Balloon(child: textWidget))
       ..addScenario(
@@ -172,8 +236,7 @@ void main() {
       ..addScenario(
           'shadowColor: black54',
           const Balloon(
-              shadow: MaterialBalloonShadow(
-                  shadowColor: Colors.black54),
+              shadow: MaterialBalloonShadow(shadowColor: Colors.black54),
               child: textWidget))
       ..addScenario(
           'shadowColor: deepPurpleAccent 0.32',

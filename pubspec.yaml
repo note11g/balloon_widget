@@ -1,6 +1,6 @@
 name: balloon_widget
 description: Provide a simple balloon widget that can be placed widget tree
-version: 0.2.0
+version: 0.3.0
 repository: https://github.com/note11g/balloon_widget
 
 environment:
@@ -9,6 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  defer_pointer: ^0.0.2
 
 dev_dependencies:
   flutter_test:

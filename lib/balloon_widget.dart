@@ -1,20 +1,26 @@
 library balloon_widget;
 
 import 'dart:math' as math;
+import 'package:defer_pointer/defer_pointer.dart';
 import 'package:flutter/material.dart';
 
 /// `BalloonNipPosition` is an enum that represents the position of the balloon's nip.
 enum BalloonNipPosition {
   /// --^-------
   topLeft,
+
   /// -----^-----
   topCenter,
+
   /// --------^--
   topRight,
+
   /// --⌄-------
   bottomLeft,
+
   /// -----⌄-----
   bottomCenter,
+
   ///
   /// -------⌄--
   bottomRight;
@@ -54,6 +60,7 @@ enum BalloonNipPosition {
 ///
 class PositionedBalloon extends StatelessWidget {
   final bool show;
+
   /// The margin between the nip and child widget.
   final double yOffset;
 
@@ -92,31 +99,82 @@ class PositionedBalloon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasBalloonTapDelegator = BalloonTapDelegator.usingDelegator(context);
+
     final isTop = balloon.nipPosition.isTop;
-    return Stack(clipBehavior: Clip.none, children: [
+    final stackChildren = [
       child,
       if (show || balloonDecorateBuilder != null)
         Positioned(
-          top: isTop ? null : 0 - yOffset,
-          bottom: isTop ? -1 - yOffset : null,
-          left: 1,
-          right: 0,
-          child: Center(
-            child: UnconstrainedBox(
-                child: balloonDecorateBuilder != null
-                    ? Builder(builder: (context) {
-                        return balloonDecorateBuilder!
-                            .call(context, balloon.toNoSize());
-                      })
-                    : balloon.toNoSize()),
-          ),
-        ),
-    ]);
+            top: isTop ? null : 0 - yOffset,
+            bottom: isTop ? -1 - yOffset : null,
+            left: 1,
+            right: 0,
+            child: Center(
+                child: UnconstrainedBox(
+                    child: balloonDecorateBuilder != null
+                        ? Builder(builder: (context) {
+                            return balloonDecorateBuilder!.call(
+                                context,
+                                balloon.toNoSize(
+                                    deferPointer: hasBalloonTapDelegator));
+                          })
+                        : balloon.toNoSize(
+                            deferPointer: hasBalloonTapDelegator)))),
+    ];
+    return Stack(
+        clipBehavior: Clip.none,
+        children: !hasBalloonTapDelegator
+            ? stackChildren
+            : stackChildren.reversed.toList());
+  }
+}
+
+/// `BalloonTapDelegator` resolves the issue where tap events are not handled
+/// when displaying a `Balloon` using `PositionedBalloon`.
+///
+/// When a `Balloon` is displayed over a child element using `PositionedBalloon`,
+/// events that need to be handled within the `Balloon` (e.g., button presses)
+/// may not be processed due to the limited area of the child element.
+///
+/// By wrapping a parent widget that has a larger hit test area than `PositionedBalloon.child`
+/// with the BalloonTapDelegator widget,
+/// you can forward tap events from that area into the `Balloon`,
+/// allowing them to be handled appropriately.
+///
+///
+/// ```dart
+/// BalloonTapDelegator( // Place this widget at a level with a larger size than `Balloon.child`
+///   child: Scaffold( // in this case, the Scaffold widget has a larger size than the `FloatingActionButton` which is `PositionedBalloon.child`
+///     floatingActionButton: PositionedBalloon(
+///       show: isVisible,
+///       balloon: Balloon(
+///         child: Button(
+///           label: 'Close',
+///           onTap: () {
+///             setState(() => isVisible = false);
+///           })),
+///       child: FloatingActionButton(onPressed: () {
+///         setState(() => isVisible = !isVisible);
+///       }))));
+/// ```
+class BalloonTapDelegator extends StatelessWidget {
+  final Widget child;
+
+  const BalloonTapDelegator({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return DeferredPointerHandler(child: child);
+  }
+
+  @visibleForTesting
+  static bool usingDelegator(BuildContext context) {
+    return context.findAncestorWidgetOfExactType<BalloonTapDelegator>() != null;
   }
 }
 
 sealed class BalloonShadow {
-
   /// same with [MaterialBalloonShadow]
   ///
   /// [elevation] is the z-coordinate at which to place this shadow.
@@ -159,6 +217,7 @@ class Balloon extends StatelessWidget {
   final double nipRadius;
   final bool isHeightIncludingNip;
   final bool oneByOneSize;
+  final bool deferPointer;
   final Widget child;
 
   const Balloon({
@@ -173,7 +232,8 @@ class Balloon extends StatelessWidget {
     this.nipRadius = 2,
     this.isHeightIncludingNip = true,
     required this.child,
-  }) : oneByOneSize = false;
+  })  : oneByOneSize = false,
+        deferPointer = false;
 
   /// Draw a balloon at 1px x 1px.
   ///
@@ -192,11 +252,12 @@ class Balloon extends StatelessWidget {
     this.nipSize = 12,
     this.nipMargin = 4,
     this.nipRadius = 2,
+    this.deferPointer = false,
     required this.child,
   })  : isHeightIncludingNip = true,
         oneByOneSize = true;
 
-  Balloon toNoSize() {
+  Balloon toNoSize({bool deferPointer = false}) {
     return Balloon.noSize(
       color: color,
       borderRadius: borderRadius,
@@ -206,6 +267,7 @@ class Balloon extends StatelessWidget {
       nipSize: nipSize,
       nipMargin: nipMargin,
       nipRadius: nipRadius,
+      deferPointer: deferPointer,
       child: child,
     );
   }
@@ -243,15 +305,16 @@ class Balloon extends StatelessWidget {
 
     if (oneByOneSize) {
       return CustomSingleChildLayout(
-        delegate: _BalloonNoSizeLayoutDelegate(
-          nipPosition: nipPosition,
-          nipSize: nipSize,
-          nipMargin: nipMargin,
-          borderRadius: borderRadius,
-          padding: padding,
-        ),
-        child: balloonWidget,
-      );
+          delegate: _BalloonNoSizeLayoutDelegate(
+            nipPosition: nipPosition,
+            nipSize: nipSize,
+            nipMargin: nipMargin,
+            borderRadius: borderRadius,
+            padding: padding,
+          ),
+          child: deferPointer
+              ? DeferPointer(child: balloonWidget)
+              : balloonWidget);
     } else {
       return balloonWidget;
     }
