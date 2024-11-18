@@ -8,14 +8,19 @@ import 'package:flutter/material.dart';
 enum BalloonNipPosition {
   /// --^-------
   topLeft,
+
   /// -----^-----
   topCenter,
+
   /// --------^--
   topRight,
+
   /// --⌄-------
   bottomLeft,
+
   /// -----⌄-----
   bottomCenter,
+
   ///
   /// -------⌄--
   bottomRight;
@@ -55,6 +60,7 @@ enum BalloonNipPosition {
 ///
 class PositionedBalloon extends StatelessWidget {
   final bool show;
+
   /// The margin between the nip and child widget.
   final double yOffset;
 
@@ -169,7 +175,6 @@ class BalloonTapDelegator extends StatelessWidget {
 }
 
 sealed class BalloonShadow {
-
   /// same with [MaterialBalloonShadow]
   ///
   /// [elevation] is the z-coordinate at which to place this shadow.

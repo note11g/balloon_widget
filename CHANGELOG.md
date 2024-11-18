@@ -1,3 +1,7 @@
+## 0.3.0
+
+* Add: `BalloonTapDelegator` which used to process with tap event delegation to the balloon widget. (PR: [#12](https://github.com/note11g/balloon_widget/pull/12), Issue: [#11](https://github.com/note11g/balloon_widget/issues/11))
+
 ## 0.2.0
 
 * Add: `Balloon.shadow` property, `BalloonShadow` interface, and `MaterialBalloonShadow`, `CustomBalloonShadow` concrete class.
