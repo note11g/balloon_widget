@@ -97,6 +97,7 @@ class PositionedBalloon extends StatelessWidget {
     required this.child,
   }) : show = true;
 
+  /// provides fade-in/out effect easily.
   factory PositionedBalloon.fade({
     Key? key,
     bool show = true,
