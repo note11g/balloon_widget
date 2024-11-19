@@ -1,6 +1,6 @@
 name: balloon_widget
 description: Provide a simple balloon widget that can be placed widget tree
-version: 0.3.0
+version: 0.4.0
 repository: https://github.com/note11g/balloon_widget
 
 environment:

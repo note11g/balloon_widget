@@ -1,3 +1,9 @@
+## 0.4.0
+
+* Add: `PositionedBalloon.fade` constructor which provides fade-in/out effect easily.
+
+* Add: `FocusablePositionedBalloon` Widget & `PositionedBalloon.focusable` constructor which provides easy visibility control with `FocusNode`.
+
 ## 0.3.0
 
 * Add: `BalloonTapDelegator` which used to process with tap event delegation to the balloon widget. (PR: [#12](https://github.com/note11g/balloon_widget/pull/12), Issue: [#11](https://github.com/note11g/balloon_widget/issues/11))
