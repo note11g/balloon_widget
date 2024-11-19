@@ -97,6 +97,28 @@ class PositionedBalloon extends StatelessWidget {
     required this.child,
   }) : show = true;
 
+  factory PositionedBalloon.fade({
+    Key? key,
+    bool show = true,
+    double yOffset = 4,
+    Duration duration = const Duration(milliseconds: 80),
+    Curve curve = Curves.easeInOut,
+    required Balloon balloon,
+    required Widget child,
+  }) {
+    return PositionedBalloon.decorateBuilder(
+      key: key,
+      yOffset: yOffset,
+      balloonDecorateBuilder: (_, balloon) => AnimatedOpacity(
+          curve: curve,
+          duration: duration,
+          opacity: show ? 1 : 0,
+          child: balloon),
+      balloon: balloon,
+      child: child,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasBalloonTapDelegator = BalloonTapDelegator.usingDelegator(context);
