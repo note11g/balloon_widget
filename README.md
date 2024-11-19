@@ -58,7 +58,7 @@ Widget build(BuildContext context) {
 @override
 Widget build(BuildContext context) {
   return PositionedBalloon.focusable( // or you can use `FocusablePositionedBalloon` widget.
-    autofocus: true, // default is true
+    autofocus: true, // default is false
     balloon: Balloon(
       nipPosition: BalloonNipPosition.topCenter,
       child: Text("now go shopping, you got a event coin!"),

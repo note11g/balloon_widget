@@ -1,3 +1,7 @@
+## 0.4.0+1
+
+* Fix typo in README.md
+
 ## 0.4.0
 
 * Add: `PositionedBalloon.fade` constructor which provides fade-in/out effect easily.
