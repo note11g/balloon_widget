@@ -119,6 +119,37 @@ class PositionedBalloon extends StatelessWidget {
     );
   }
 
+  /// PositionedBalloon with focus.
+  ///
+  /// This widget is a combination of `Focus` and `PositionedBalloon`.
+  ///
+  /// It provides a balloon that is displayed when the focus is on the child widget.
+  ///
+  ///
+  /// It's same with `FocusablePositionedBalloon` constructor.
+  static FocusablePositionedBalloon focusable({
+    Key? key,
+    bool autofocus = false,
+    FocusNode? focusNode,
+    Duration fadeDuration = const Duration(milliseconds: 80),
+    Curve fadeCurve = Curves.easeInOut,
+    double yOffset = 4,
+    required Balloon balloon,
+    required Widget Function(BuildContext context, FocusNode focusNode)
+        childBuilder,
+  }) {
+    return FocusablePositionedBalloon(
+      key: key,
+      autofocus: autofocus,
+      focusNode: focusNode,
+      fadeDuration: fadeDuration,
+      fadeCurve: fadeCurve,
+      yOffset: yOffset,
+      balloon: balloon,
+      childBuilder: childBuilder,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasBalloonTapDelegator = BalloonTapDelegator.usingDelegator(context);
@@ -149,6 +180,52 @@ class PositionedBalloon extends StatelessWidget {
         children: !hasBalloonTapDelegator
             ? stackChildren
             : stackChildren.reversed.toList());
+  }
+}
+
+/// PositionedBalloon with focus.
+///
+/// This widget is a combination of `Focus` and `PositionedBalloon.fade`.
+///
+///
+/// It provides a balloon that is displayed when the focus is on the child widget.
+///
+///
+/// It's same with `PositionedBalloon.focusable` constructor.
+class FocusablePositionedBalloon extends StatelessWidget {
+  final bool autofocus;
+  final FocusNode? focusNode;
+  final Balloon balloon;
+  final Duration fadeDuration;
+  final Curve fadeCurve;
+  final double yOffset;
+  final Widget Function(BuildContext context, FocusNode focusNode) childBuilder;
+
+  const FocusablePositionedBalloon({
+    super.key,
+    this.autofocus = false,
+    this.focusNode,
+    this.fadeDuration = const Duration(milliseconds: 80),
+    this.fadeCurve = Curves.easeInOut,
+    this.yOffset = 4,
+    required this.balloon,
+    required this.childBuilder,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Focus(
+        autofocus: autofocus,
+        focusNode: focusNode,
+        child: Builder(builder: (context) {
+          final realFocusNode = Focus.of(context);
+          return PositionedBalloon.fade(
+            show: realFocusNode.hasFocus,
+            yOffset: yOffset,
+            balloon: balloon,
+            child: childBuilder(context, realFocusNode),
+          );
+        }));
   }
 }
 
