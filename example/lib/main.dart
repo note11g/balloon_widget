@@ -55,7 +55,8 @@ class _MyHomePageState extends State<MyHomePage> {
             floatingActionButton: ValueListenableBuilder(
                 valueListenable: showTooltip,
                 builder: (context, value, child) {
-                  return PositionedBalloon.decorateBuilder(
+                  return PositionedBalloon.fade(
+                    show: value,
                     balloon: Balloon(
                       nipPosition: BalloonNipPosition.bottomRight,
                       color: Theme.of(context).colorScheme.secondary,
@@ -85,13 +86,6 @@ class _MyHomePageState extends State<MyHomePage> {
                                     color: Colors.white)),
                           ]),
                     ),
-                    balloonDecorateBuilder: (context, balloon) {
-                      return AnimatedOpacity(
-                          opacity: value ? 1.0 : 0.0,
-                          duration: const Duration(milliseconds: 100),
-                          curve: Curves.easeInOut,
-                          child: balloon);
-                    },
                     child: FloatingActionButton(
                       onPressed: () {
                         showTooltip.value = !showTooltip.value;
