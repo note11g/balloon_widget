@@ -28,28 +28,49 @@ Balloon(
 ### Use as a widget which placed at the specific widget.
 
 ```dart
+
 bool isVisible = true;
 
 @override
 Widget build(BuildContext context) {
-  return PositionedBalloon( // if you want apply decoration on balloon widget, use `PositionedBalloon.decorateBuilder` widget.
+  // if you want apply decoration on balloon widget, use `PositionedBalloon.decorateBuilder` widget.
+  // or just need fade-in/out effect, use `PositionedBalloon.fade` constructor.
+  return PositionedBalloon(
     show: isVisible,
     balloon: Balloon(
       nipPosition: BalloonNipPosition.topCenter,
-      child: Row(children: [
-        Text("now go shopping, you got a event coin!"),
-        IconButton(
-            onPressed: () => setState(() => isVisible = false),
-            icon: Icon(Icons.close)),
-      ]),
-      child: TextButton(
-        onPressed: () {
-          openUrl(this.goodsUrl);
-          setState(() => isVisible = false);
-        },
-        text: Text("go shopping"),
-      ),
+      child: Text("now go shopping, you got a event coin!"),
     ),
+    child: TextButton(
+      onPressed: () {
+        openUrl(this.goodsUrl);
+        setState(() => isVisible = false);
+      },
+      text: Text("go shopping"),
+    ),
+  );
+}
+```
+
+### Use as a widget which placed at the specific widget with Focus. (easy way to handle dynamic-visibility without variable)
+
+```dart
+@override
+Widget build(BuildContext context) {
+  return PositionedBalloon.focusable( // or you can use `FocusablePositionedBalloon` widget.
+    autofocus: true, // default is true
+    balloon: Balloon(
+      nipPosition: BalloonNipPosition.topCenter,
+      child: Text("now go shopping, you got a event coin!"),
+    ),
+    childBuilder: (context, focusNode) =>
+        TextButton(
+          onPressed: () {
+            openUrl(this.goodsUrl);
+            if (focusNode.hasFocus) focusNode.unfocus();
+          },
+          text: Text("go shopping"),
+        ),
   );
 }
 ```
@@ -57,6 +78,7 @@ Widget build(BuildContext context) {
 ### Use as a widget which placed at the specific widget and include button on the balloon widget.
 
 ```dart
+
 bool isVisible = true;
 
 @override
@@ -66,23 +88,23 @@ Widget build(BuildContext context) {
           body: ListView(
               children: [
                 PositionedBalloon(
-                  show: isVisible,
-                  balloon: Balloon(
-                    nipPosition: BalloonNipPosition.topCenter,
-                    child: Row(children: [
-                      Text("now go shopping, you got a event coin!"),
-                      IconButton(
-                          onPressed: () => setState(() => isVisible = false),
-                          icon: Icon(Icons.close)),
-                      ]),
-                  child: TextButton(
-                      onPressed: () {
-                          openUrl(this.goodsUrl);
-                          setState(() => isVisible = false);
-                      },
-                      text: Text("go shopping"),
-                  ))),
-  ])));
+                    show: isVisible,
+                    balloon: Balloon(
+                        nipPosition: BalloonNipPosition.topCenter,
+                        child: Row(children: [
+                          Text("now go shopping, you got a event coin!"),
+                          IconButton(
+                              onPressed: () => setState(() => isVisible = false),
+                              icon: Icon(Icons.close)),
+                        ]),
+                        child: TextButton(
+                          onPressed: () {
+                            openUrl(this.goodsUrl);
+                            setState(() => isVisible = false);
+                          },
+                          text: Text("go shopping"),
+                        ))),
+              ])));
 }
 ```
 
