@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:balloon_widget/balloon_widget.dart';
+import 'package:balloon_widget/balloon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golden_toolkit/golden_toolkit.dart';
