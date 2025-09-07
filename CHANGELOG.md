@@ -1,3 +1,7 @@
+## 0.5.0
+
+* Add: Glass effect support with `Balloon.glassBlueSigma`, `Balloon.glassOpacity` (Issue: [#15](https://github.com/note11g/balloon_widget/issues/15))
+
 ## 0.4.0+1
 
 * Fix typo in README.md
