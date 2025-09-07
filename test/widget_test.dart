@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:balloon_widget/balloon_widget.dart';
+import 'package:balloon_widget/balloon.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:golden_toolkit/golden_toolkit.dart';
@@ -413,6 +413,87 @@ void main() {
 
     await tester.pumpWidgetBuilder(builder.build());
     await screenMatchesGolden(tester, 'positioned_balloon');
+  });
+
+  testGoldens('glass effect balloon check', (tester) async {
+    await loadAppFonts();
+
+    const textWidget = Text("Glass Effect");
+    final builder = GoldenBuilder.grid(
+        columns: 3,
+        widthToHeightRatio: 1,
+        wrap: (child) => Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.blue.shade300, Colors.purple.shade300],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              padding: const EdgeInsets.all(16),
+              child: child,
+            ))
+      ..addScenario(
+          'glassEffect: false (default)',
+          const Balloon(
+              nipPosition: BalloonNipPosition.bottomCenter, child: textWidget))
+      ..addScenario(
+          'glassEffect: true\nblurSigma: 10.0, opacity: 0.3',
+          const Balloon(
+              nipPosition: BalloonNipPosition.bottomCenter,
+              glassEffect: true,
+              glassBlurSigma: 10.0,
+              glassOpacity: 0.3,
+              color: Colors.white,
+              child: textWidget))
+      ..addScenario(
+          'glassEffect: true\nblurSigma: 15.0, opacity: 0.2',
+          const Balloon(
+              nipPosition: BalloonNipPosition.topLeft,
+              glassEffect: true,
+              glassBlurSigma: 15.0,
+              glassOpacity: 0.2,
+              color: Colors.blue,
+              child: Text(
+                "Heavy Blur",
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              )))
+      ..addScenario(
+          'glassEffect: true\ntopRight position',
+          const Balloon(
+              nipPosition: BalloonNipPosition.topRight,
+              glassEffect: true,
+              glassBlurSigma: 12.0,
+              glassOpacity: 0.25,
+              color: Colors.white70,
+              child: textWidget))
+      ..addScenario(
+          'glassEffect: true\nbottomLeft with low opacity',
+          const Balloon(
+              nipPosition: BalloonNipPosition.bottomLeft,
+              glassEffect: true,
+              glassBlurSigma: 8.0,
+              glassOpacity: 0.1,
+              color: Colors.purple,
+              child: Text(
+                "Light Glass",
+                style: TextStyle(color: Colors.white),
+              )))
+      ..addScenario(
+          'glassEffect: true\nhigh blur, high opacity',
+          const Balloon(
+              nipPosition: BalloonNipPosition.bottomRight,
+              glassEffect: true,
+              glassBlurSigma: 20.0,
+              glassOpacity: 0.4,
+              color: Colors.cyan,
+              child: Text(
+                "Strong Glass",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              )));
+
+    await tester.pumpWidgetBuilder(builder.build());
+    await screenMatchesGolden(tester, 'glass_effect_balloon_grid');
   });
 }
 

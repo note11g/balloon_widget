@@ -14,6 +14,7 @@ a simple balloon widget.
 ![shadow_grid.png](https://github.com/note11g/balloon_widget/raw/main/test/goldens/shadow_grid.png)
 ![custom_shadow_grid.png](https://github.com/note11g/balloon_widget/raw/main/test/goldens/custom_shadow_grid.png)
 ![nip_target_position_grid.png](https://github.com/note11g/balloon_widget/raw/main/test/goldens/nip_target_position_grid.png)
+![include_nip_height_grid.png](https://github.com/note11g/balloon_widget/raw/main/test/goldens/include_nip_height_grid.png)]
 
 ## Usage
 

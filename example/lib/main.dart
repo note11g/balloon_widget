@@ -1,4 +1,4 @@
-import 'package:balloon_widget/balloon_widget.dart';
+import 'package:balloon_widget/balloon.dart';
 import 'package:flutter/material.dart';
 
 void main() {
