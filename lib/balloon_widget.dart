@@ -1,6 +1,7 @@
 library balloon_widget;
 
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:defer_pointer/defer_pointer.dart';
 import 'package:flutter/material.dart';
 
@@ -318,6 +319,27 @@ class Balloon extends StatelessWidget {
   final bool isHeightIncludingNip;
   final bool oneByOneSize;
   final bool deferPointer;
+  
+  /// Whether to enable glass effect with backdrop blur.
+  ///
+  /// When [true], applies a backdrop blur filter to the balloon including the nip.
+  /// The default value is [false].
+  final bool glassEffect;
+  
+  /// The blur intensity for the glass effect.
+  ///
+  /// This controls the sigma value for the backdrop blur filter.
+  /// Higher values create more intense blur.
+  /// The default value is 10.0.
+  final double glassBlurSigma;
+  
+  /// The opacity of the balloon color when glass effect is enabled.
+  ///
+  /// This value is multiplied with the balloon [color] when [glassEffect] is [true].
+  /// Should be between 0.0 and 1.0.
+  /// The default value is 0.2.
+  final double glassOpacity;
+  
   final Widget child;
 
   const Balloon({
@@ -331,6 +353,9 @@ class Balloon extends StatelessWidget {
     this.nipMargin = 4,
     this.nipRadius = 2,
     this.isHeightIncludingNip = true,
+    this.glassEffect = false,
+    this.glassBlurSigma = 10.0,
+    this.glassOpacity = 0.2,
     required this.child,
   })  : oneByOneSize = false,
         deferPointer = false;
@@ -353,6 +378,9 @@ class Balloon extends StatelessWidget {
     this.nipMargin = 4,
     this.nipRadius = 2,
     this.deferPointer = false,
+    this.glassEffect = false,
+    this.glassBlurSigma = 10.0,
+    this.glassOpacity = 0.2,
     required this.child,
   })  : isHeightIncludingNip = true,
         oneByOneSize = true;
@@ -368,6 +396,9 @@ class Balloon extends StatelessWidget {
       nipMargin: nipMargin,
       nipRadius: nipRadius,
       deferPointer: deferPointer,
+      glassEffect: glassEffect,
+      glassBlurSigma: glassBlurSigma,
+      glassOpacity: glassOpacity,
       child: child,
     );
   }
@@ -375,6 +406,44 @@ class Balloon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final nipHeight = _getRealNipHeight(nipSize, nipRadius);
+    
+    Widget balloonContent = CustomPaint(
+      painter: _BalloonPainter(
+        color: glassEffect ? color.withOpacity(glassOpacity) : color,
+        borderRadius: borderRadius,
+        shadowRenderer:
+            shadow != null ? _ShadowRenderer(strategy: shadow!) : null,
+        nipPosition: nipPosition,
+        nipMargin: nipMargin,
+        nipSize: nipSize,
+        nipRadius: nipRadius,
+      ),
+      child: ClipRRect(
+        borderRadius: borderRadius,
+        child: Padding(
+          padding: padding,
+          child: child,
+        ),
+      ),
+    );
+
+    // Apply glass effect with BackdropFilter if enabled
+    if (glassEffect) {
+      balloonContent = ClipPath(
+        clipper: _BalloonGlassClipper(
+          nipPosition: nipPosition,
+          nipSize: nipSize,
+          nipMargin: nipMargin,
+          nipRadius: nipRadius,
+          borderRadius: borderRadius,
+        ),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: glassBlurSigma, sigmaY: glassBlurSigma),
+          child: balloonContent,
+        ),
+      );
+    }
+
     final balloonWidget = Padding(
       padding: isHeightIncludingNip
           ? EdgeInsets.only(
@@ -382,25 +451,7 @@ class Balloon extends StatelessWidget {
               bottom: !nipPosition.isTop ? nipHeight : 0,
             )
           : EdgeInsets.zero,
-      child: CustomPaint(
-        painter: _BalloonPainter(
-          color: color,
-          borderRadius: borderRadius,
-          shadowRenderer:
-              shadow != null ? _ShadowRenderer(strategy: shadow!) : null,
-          nipPosition: nipPosition,
-          nipMargin: nipMargin,
-          nipSize: nipSize,
-          nipRadius: nipRadius,
-        ),
-        child: ClipRRect(
-          borderRadius: borderRadius,
-          child: Padding(
-            padding: padding,
-            child: child,
-          ),
-        ),
-      ),
+      child: balloonContent,
     );
 
     if (oneByOneSize) {
@@ -594,55 +645,14 @@ class _BalloonPainter extends CustomPainter {
   }
 
   Path drawPath(Size size, BorderRadius borderRadius) {
-    final topLeftRadius = borderRadius.topLeft,
-        topRightRadius = borderRadius.topRight,
-        bottomLeftRadius = borderRadius.bottomLeft,
-        bottomRightRadius = borderRadius.bottomRight;
-
-    final List<(Offset, Offset, Radius)> lines = [
-      (
-        Offset(topLeftRadius.x, 0),
-        Offset(size.width - topRightRadius.x, 0),
-        topRightRadius,
-      ),
-      (
-        Offset(size.width, topRightRadius.y),
-        Offset(size.width, size.height - bottomRightRadius.y),
-        bottomRightRadius,
-      ),
-      (
-        Offset(size.width - bottomRightRadius.x, size.height),
-        Offset(bottomLeftRadius.x, size.height),
-        bottomLeftRadius,
-      ),
-      (
-        Offset(0, size.height - bottomLeftRadius.y),
-        Offset(0, topLeftRadius.y),
-        topLeftRadius,
-      ),
-    ];
-    final nipLineIdx = nipPosition.isTop ? 0 : 2;
-
-    final path = Path();
-    for (int i = 0; i < lines.length; i++) {
-      final (start, end, rad) = lines[i];
-      if (i == nipLineIdx) {
-        path._drawNip(start, end,
-            nipSize: nipSize,
-            nipMargin: nipMargin,
-            nipPosition: nipPosition,
-            nipRadius: nipRadius);
-      } else {
-        if (i == 0) path.moveTo(start.dx, start.dy);
-        path._lineToPoint(end);
-      }
-      // next round(arc)
-      final nextIdx = i != lines.length - 1 ? i + 1 : 0;
-      final (next, _, _) = lines[nextIdx];
-      path.arcToPoint(next, radius: rad);
-    }
-
-    return path..close();
+    return _createBalloonPath(
+      size: size,
+      borderRadius: borderRadius,
+      nipPosition: nipPosition,
+      nipSize: nipSize,
+      nipMargin: nipMargin,
+      nipRadius: nipRadius,
+    );
   }
 
   @override
@@ -655,6 +665,69 @@ class _BalloonPainter extends CustomPainter {
         oldDelegate.nipRadius != nipRadius ||
         oldDelegate.borderRadius != borderRadius;
   }
+}
+
+/// Shared balloon path creation logic used by both [_BalloonPainter] and [_BalloonGlassClipper].
+///
+/// Creates a balloon-shaped path including rounded corners and nip based on the provided parameters.
+/// This function ensures consistent balloon shapes across painting and clipping operations.
+Path _createBalloonPath({
+  required Size size,
+  required BorderRadius borderRadius,
+  required BalloonNipPosition nipPosition,
+  required double nipSize,
+  required double nipMargin,
+  required double nipRadius,
+}) {
+  final topLeftRadius = borderRadius.topLeft,
+      topRightRadius = borderRadius.topRight,
+      bottomLeftRadius = borderRadius.bottomLeft,
+      bottomRightRadius = borderRadius.bottomRight;
+
+  final List<(Offset, Offset, Radius)> lines = [
+    (
+      Offset(topLeftRadius.x, 0),
+      Offset(size.width - topRightRadius.x, 0),
+      topRightRadius,
+    ),
+    (
+      Offset(size.width, topRightRadius.y),
+      Offset(size.width, size.height - bottomRightRadius.y),
+      bottomRightRadius,
+    ),
+    (
+      Offset(size.width - bottomRightRadius.x, size.height),
+      Offset(bottomLeftRadius.x, size.height),
+      bottomLeftRadius,
+    ),
+    (
+      Offset(0, size.height - bottomLeftRadius.y),
+      Offset(0, topLeftRadius.y),
+      topLeftRadius,
+    ),
+  ];
+  final nipLineIdx = nipPosition.isTop ? 0 : 2;
+
+  final path = Path();
+  for (int i = 0; i < lines.length; i++) {
+    final (start, end, rad) = lines[i];
+    if (i == nipLineIdx) {
+      path._drawNip(start, end,
+          nipSize: nipSize,
+          nipMargin: nipMargin,
+          nipPosition: nipPosition,
+          nipRadius: nipRadius);
+    } else {
+      if (i == 0) path.moveTo(start.dx, start.dy);
+      path._lineToPoint(end);
+    }
+    // next round(arc)
+    final nextIdx = i != lines.length - 1 ? i + 1 : 0;
+    final (next, _, _) = lines[nextIdx];
+    path.arcToPoint(next, radius: rad);
+  }
+
+  return path..close();
 }
 
 extension _BalloonPathExtension on Path {
@@ -819,5 +892,199 @@ class CustomBalloonShadow implements BalloonShadow {
     matrix.scale(scaleX, scaleY);
     final Path adjustedPath = path.transform(matrix.storage);
     return adjustedPath;
+  }
+}
+
+////////////////////////
+
+/// A clipper that creates balloon-shaped clipping paths.
+///
+/// This clipper can be used with [ClipPath] to create balloon shapes
+/// with rounded corners and nip in various positions.
+class BalloonClipper extends CustomClipper<Path> {
+  final BalloonNipPosition nipPosition;
+
+  /// The width of the nip (triangular pointer).
+  final double nipWidth;
+
+  /// The height of the nip (triangular pointer).
+  final double nipHeight;
+
+  /// The radius for rounded corners of the balloon.
+  final double borderRadius;
+
+  /// The margin between the nip and the edge of the balloon.
+  ///
+  /// For [BalloonNipPosition.topLeft] and [BalloonNipPosition.bottomLeft],
+  /// this is the distance from the left edge.
+  /// For [BalloonNipPosition.topRight] and [BalloonNipPosition.bottomRight],
+  /// this is the distance from the right edge.
+  /// For center positions, this value is ignored.
+  final double nipMargin;
+
+  const BalloonClipper({
+    required this.nipPosition,
+    required this.nipWidth,
+    required this.nipHeight,
+    this.borderRadius = 8,
+    this.nipMargin = 4,
+  });
+
+  @override
+  Path getClip(Size size) {
+    // Create balloon shape:
+    // 1) Rounded rectangle base
+    // 2) Triangular nip positioned according to nipPosition
+    //    - Calculate position based on left/center/right alignment
+    //    - Consider margin for proper nip placement
+
+    final path = Path();
+
+    // Calculate corner radius, ensuring it fits within the size constraints
+    final resolvedRadius = math.min(borderRadius, size.shortestSide / 2);
+    final radius = Radius.circular(resolvedRadius);
+
+    // Define corner points for rounded rectangle
+    final topLeftCorner = Offset(resolvedRadius, 0);
+    final topRightCorner = Offset(size.width - resolvedRadius, 0);
+    final bottomRightCorner = Offset(size.width, size.height - resolvedRadius);
+    final bottomLeftCorner = Offset(0, size.height - resolvedRadius);
+
+    // Define edges as (start, end, cornerRadius) tuples
+    // Order: [top edge, right edge, bottom edge, left edge]
+    final edges = <(Offset start, Offset end, Radius cornerRadius)>[
+      (topLeftCorner, topRightCorner, radius),     // Top edge (left → right)
+      (Offset(size.width, resolvedRadius), bottomRightCorner, radius),  // Right edge (top → bottom)
+      (Offset(size.width - resolvedRadius, size.height),
+      Offset(resolvedRadius, size.height), radius),  // Bottom edge (right → left)
+      (Offset(0, size.height - resolvedRadius), Offset(
+          0, resolvedRadius), radius),  // Left edge (bottom → top)
+    ];
+
+    // Determine which edge gets the nip:
+    // - Top nips use edge 0 (top edge)
+    // - Bottom nips use edge 2 (bottom edge)
+    final nipEdgeIndex = nipPosition.isTop ? 0 : 2;
+
+    // Draw the path
+    for (int i = 0; i < edges.length; i++) {
+      final (start, end, cornerRadius) = edges[i];
+
+      // Move to start point for first edge
+      if (i == 0) {
+        path.moveTo(start.dx, start.dy);
+      }
+
+      if (i == nipEdgeIndex) {
+        // Draw nip (triangular pointer)
+        _addNipPath(path, start, end, nipPosition);
+      } else {
+        // Draw straight line
+        path.lineTo(end.dx, end.dy);
+      }
+
+      // Connect to next edge with rounded corner
+      final nextIndex = (i == edges.length - 1) ? 0 : i + 1;
+      final (nextEdgeStart, _, nextCornerRadius) = edges[nextIndex];
+
+      path.arcToPoint(
+        nextEdgeStart,
+        radius: nextCornerRadius,
+      );
+    }
+
+    path.close();
+    return path;
+  }
+
+  /// Draws a nip (triangular pointer) on the specified edge.
+  ///
+  /// Inserts a triangular nip between [start] and [end] points:
+  /// - [BalloonNipPosition.topCenter], [BalloonNipPosition.bottomCenter] → centered
+  /// - [BalloonNipPosition.topLeft], [BalloonNipPosition.bottomLeft] → near start point
+  /// - [BalloonNipPosition.topRight], [BalloonNipPosition.bottomRight] → near end point
+  void _addNipPath(Path path, Offset start, Offset end,
+      BalloonNipPosition pos) {
+    // Assume horizontal line (top or bottom edge)
+    final lineLength = (end.dx - start.dx).abs();
+
+    // Calculate nip center X position based on alignment
+    double arrowCenterX;
+    if (pos.isCenter) {
+      arrowCenterX = (start.dx + end.dx) / 2.0;
+    } else if (pos.isLeft) {
+      // Position from start point with margin
+      arrowCenterX = start.dx + nipMargin + nipWidth / 2;
+    } else {
+      // Position from end point with margin (right alignment)
+      arrowCenterX = end.dx - nipMargin - nipWidth / 2;
+    }
+
+    // Determine nip direction: upward for top positions, downward for bottom
+    final sign = pos.isTop ? -1.0 : 1.0;
+    final arrowTipY = start.dy + (sign * nipHeight);
+    final arrowLeftX = arrowCenterX - (nipWidth / 2);
+    final arrowRightX = arrowCenterX + (nipWidth / 2);
+
+    // Draw path: start → arrowLeft → arrowTip → arrowRight → end
+    path.lineTo(arrowLeftX, start.dy);
+    path.lineTo(arrowCenterX, arrowTipY);
+    path.lineTo(arrowRightX, start.dy);
+    path.lineTo(end.dx, end.dy);
+  }
+
+  @override
+  bool shouldReclip(BalloonClipper oldClipper) {
+    return oldClipper.nipPosition != nipPosition ||
+        oldClipper.nipWidth != nipWidth ||
+        oldClipper.nipHeight != nipHeight ||
+        oldClipper.borderRadius != borderRadius ||
+        oldClipper.nipMargin != nipMargin;
+  }
+}
+
+/// Glass effect clipper that uses the same path logic as [_BalloonPainter].
+///
+/// This clipper creates the exact same balloon shape including the nip
+/// for use with [BackdropFilter] to apply glass effect consistently.
+class _BalloonGlassClipper extends CustomClipper<Path> {
+  final BalloonNipPosition nipPosition;
+  final double nipSize;
+  final double nipMargin;
+  final double nipRadius;
+  final BorderRadius borderRadius;
+
+  _BalloonGlassClipper({
+    required this.nipPosition,
+    required this.nipSize,
+    required this.nipMargin,
+    required this.nipRadius,
+    required this.borderRadius,
+  });
+
+  @override
+  Path getClip(Size size) {
+    final calibratedBorderRadius = _BalloonPainter.calibrateBorderRadius(
+      borderRadius: borderRadius, 
+      size: size
+    );
+    
+    return _createBalloonPath(
+      size: size,
+      borderRadius: calibratedBorderRadius,
+      nipPosition: nipPosition,
+      nipSize: nipSize,
+      nipMargin: nipMargin,
+      nipRadius: nipRadius,
+    );
+  }
+
+  @override
+  bool shouldReclip(_BalloonGlassClipper oldClipper) {
+    return oldClipper.nipPosition != nipPosition ||
+        oldClipper.nipSize != nipSize ||
+        oldClipper.nipMargin != nipMargin ||
+        oldClipper.nipRadius != nipRadius ||
+        oldClipper.borderRadius != borderRadius;
   }
 }
